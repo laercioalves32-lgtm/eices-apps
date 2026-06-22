@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#0A1628">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="EICES Controle">
+<title>EICES — Painel de Controle</title>
+<style>
+:root{
+  --bg:#0A1628;--surface:#111E35;--card:#1A2B47;--border:#243550;
+  --accent:#00C2FF;--accent2:#0077FF;--green:#00D68F;--yellow:#FFB800;
+  --red:#FF4D6A;--orange:#FF8C00;--text:#E8F0FF;--muted:#6B82A8;
+  --font:'Segoe UI',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100dvh;}
+
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent2),var(--accent));display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.logo-text{font-size:16px;font-weight:700;}
+.logo-sub{font-size:11px;color:var(--muted);}
+.header-btns{display:flex;gap:6px;align-items:center;}
+.btn-sm{background:var(--card);border:1.5px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;font-weight:700;padding:7px 10px;cursor:pointer;}
+.btn-sm.accent{border-color:var(--accent);color:var(--accent);}
+.notif-btn{position:relative;background:var(--card);border:1px solid var(--border);border-radius:8px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;}
+.notif-badge{position:absolute;top:-4px;right:-4px;background:var(--red);color:white;width:16px;height:16px;border-radius:50%;font-size:9px;font-weight:700;display:none;align-items:center;justify-content:center;}
+.notif-badge.show{display:flex;}
+
+.conn-bar{display:flex;align-items:center;gap:6px;padding:6px 14px;background:var(--surface);border-bottom:1px solid var(--border);font-size:11px;}
+.conn-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.conn-dot.ok{background:var(--green);}
+.conn-dot.err{background:var(--red);}
+.conn-dot.checking{background:var(--yellow);animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:61px;z-index:99;}
+.tab{flex:1;padding:11px 4px;font-size:11px;font-weight:600;color:var(--muted);text-align:center;cursor:pointer;border-bottom:2px solid transparent;}
+.tab.active{color:var(--accent);border-color:var(--accent);}
+
+.content{padding:14px;}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px 14px;}
+.kpi-val{font-size:26px;font-weight:800;line-height:1;}
+.kpi-label{font-size:11px;color:var(--muted);margin-top:3px;}
+.kpi.p .kpi-val{color:var(--yellow);}
+.kpi.a .kpi-val{color:var(--green);}
+.kpi.m .kpi-val{color:var(--orange);}
+.kpi.c .kpi-val{color:var(--red);}
+
+.sol-card{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:12px;overflow:hidden;}
+.sol-header{padding:13px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+.sol-obra{font-size:15px;font-weight:700;}
+.sol-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.badges{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
+.badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.badge.pendente{background:rgba(255,184,0,.15);color:var(--yellow);border:1px solid rgba(255,184,0,.3);}
+.badge.aprovado{background:rgba(0,214,143,.15);color:var(--green);border:1px solid rgba(0,214,143,.3);}
+.badge.parcial{background:rgba(255,140,0,.15);color:var(--orange);border:1px solid rgba(255,140,0,.3);}
+.badge.rejeitado{background:rgba(255,77,106,.15);color:var(--red);border:1px solid rgba(255,77,106,.3);}
+.badge.critico{background:rgba(255,77,106,.2);color:var(--red);border:1px solid var(--red);}
+.badge.urgente{background:rgba(255,184,0,.2);color:var(--yellow);border:1px solid var(--yellow);}
+
+.sol-ferrs{padding:0 14px 12px;display:flex;flex-wrap:wrap;gap:6px;}
+.ferr-tag{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;}
+.ferr-tag span{color:var(--muted);}
+.f-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.f-p{background:var(--yellow);}
+.f-a{background:var(--green);}
+.f-r{background:var(--red);}
+
+.sol-meta{padding:9px 14px;background:var(--surface);display:flex;gap:12px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);flex-wrap:wrap;}
+.sol-meta strong{color:var(--text);}
+.sol-obs{padding:9px 14px;font-size:12px;color:var(--muted);font-style:italic;border-top:1px solid var(--border);}
+.sol-actions{padding:10px 14px;display:flex;gap:8px;border-top:1px solid var(--border);}
+.btn-aprovar{flex:1;padding:10px;border:none;border-radius:10px;background:rgba(0,214,143,.15);border:1.5px solid var(--green);color:var(--green);font-size:13px;font-weight:700;cursor:pointer;}
+.btn-rejeitar{padding:10px 12px;border-radius:10px;background:rgba(255,77,106,.1);border:1.5px solid rgba(255,77,106,.4);color:var(--red);font-size:13px;font-weight:700;cursor:pointer;}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;align-items:flex-end;justify-content:center;}
+.overlay.show{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:88dvh;overflow-y:auto;animation:slideUp .25s ease;}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:14px;}
+.modal-sub{font-size:12px;color:var(--muted);margin-bottom:14px;}
+.modal-field{margin-bottom:12px;}
+.modal-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;display:block;}
+.modal-input{width:100%;padding:11px 14px;background:var(--card);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--font);}
+.modal-input:focus{outline:none;border-color:var(--accent);}
+.modal-btns{display:flex;gap:10px;margin-top:6px;}
+.btn-modal-ok{flex:1;padding:13px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--accent2),var(--accent));color:#000;font-size:15px;font-weight:700;cursor:pointer;}
+.btn-modal-cancel{padding:13px 16px;border-radius:10px;background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:14px;cursor:pointer;}
+
+.ferr-aprov-item{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;}
+.ferr-aprov-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.ferr-aprov-nome{font-size:14px;font-weight:700;}
+.ferr-aprov-qtd{font-size:11px;color:var(--muted);}
+.ferr-btns{display:flex;gap:6px;}
+.btn-fs{padding:7px 10px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--border);background:var(--surface);color:var(--muted);}
+.btn-fs.fa{border-color:var(--green);color:var(--green);background:rgba(0,214,143,.1);}
+.btn-fs.fr{border-color:var(--red);color:var(--red);background:rgba(255,77,106,.1);}
+
+.empty{text-align:center;padding:50px 16px;color:var(--muted);}
+.empty-icon{font-size:36px;margin-bottom:10px;}
+
+.campo-card{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;}
+.campo-header{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;}
+.campo-obra{font-size:14px;font-weight:700;}
+.campo-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.campo-ferrs{padding:0 14px 12px;display:flex;flex-wrap:wrap;gap:6px;}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card);border:1px solid var(--border);color:var(--text);padding:12px 20px;border-radius:30px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:999;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.ok{border-color:var(--green);color:var(--green);}
+.toast.err{border-color:var(--red);color:var(--red);}
+
+.filtros{display:flex;gap:8px;margin-bottom:12px;}
+.filtros select{flex:1;padding:9px 10px;background:var(--card);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:12px;font-family:var(--font);-webkit-appearance:none;}
+
+
+/* EDIÇÃO */
+.btn-editar{padding:8px 12px;border-radius:8px;background:rgba(0,194,255,.1);border:1.5px solid rgba(0,194,255,.3);color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;}
+.edit-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:10px;}
+.edit-section-title{font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+.edit-field{margin-bottom:10px;}
+.edit-field:last-child{margin-bottom:0;}
+.edit-label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;}
+.edit-input{width:100%;padding:9px 12px;background:var(--card);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:var(--font);}
+.edit-input:focus{outline:none;border-color:var(--accent);}
+.edit-btns{display:flex;gap:8px;margin-top:12px;}
+.btn-salvar{flex:1;padding:10px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--accent2),var(--accent));color:#000;font-size:13px;font-weight:700;cursor:pointer;}
+.btn-cancelar-edit{padding:10px 14px;border-radius:8px;background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:13px;cursor:pointer;}
+.edit-ferr-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);}
+.edit-ferr-item:last-child{border-bottom:none;}
+.edit-ferr-nome{flex:1;font-size:13px;}
+.edit-ferr-qtd{width:60px;padding:6px 8px;background:var(--bg);border:1.5px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;text-align:center;font-family:var(--font);}
+.edit-ferr-del{background:rgba(255,77,106,.1);border:1px solid rgba(255,77,106,.3);color:var(--red);border-radius:7px;padding:5px 8px;font-size:12px;cursor:pointer;}
+
+/* CAMPO APRIMORADO */
+.campo-obra-card{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:14px;overflow:hidden;}
+.campo-obra-header{padding:13px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;}
+.campo-obra-nome{font-size:15px;font-weight:700;}
+.campo-obra-sub{font-size:11px;color:var(--muted);margin-top:3px;}
+.campo-obra-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+.campo-obra-total{font-size:15px;font-weight:800;color:var(--accent);}
+.campo-obra-body{display:none;border-top:1px solid var(--border);}
+.campo-obra-body.open{display:block;}
+.campo-ferr-row{padding:11px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.campo-ferr-row:last-child{border-bottom:none;}
+.campo-ferr-icon{font-size:18px;flex-shrink:0;}
+.campo-ferr-info{flex:1;min-width:0;}
+.campo-ferr-nome{font-size:13px;font-weight:600;}
+.campo-ferr-pat{font-size:11px;color:var(--muted);margin-top:1px;}
+.campo-ferr-right{text-align:right;flex-shrink:0;}
+.campo-ferr-val{font-size:12px;font-weight:700;color:var(--accent);}
+.campo-ferr-data{font-size:10px;color:var(--muted);margin-top:2px;}
+.campo-alerta{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-top:2px;display:inline-block;}
+.alerta-venc{background:rgba(255,77,106,.15);color:var(--red);border:1px solid rgba(255,77,106,.3);}
+.alerta-hoje{background:rgba(255,184,0,.15);color:var(--yellow);border:1px solid rgba(255,184,0,.3);}
+.alerta-ok{background:rgba(0,214,143,.1);color:var(--green);border:1px solid rgba(0,214,143,.2);}
+.campo-footer{display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--surface);border-top:1px solid var(--border);}
+.campo-footer-item{padding:10px;text-align:center;border-right:1px solid var(--border);}
+.campo-footer-item:last-child{border-right:none;}
+.campo-footer-val{font-size:14px;font-weight:800;}
+.campo-footer-lbl{font-size:10px;color:var(--muted);margin-top:2px;}
+.campo-filtros{display:flex;gap:8px;margin-bottom:14px;}
+.campo-filtros select{flex:1;padding:9px 10px;background:var(--card);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:12px;font-family:var(--font);-webkit-appearance:none;}
+.campo-resumo{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+.campo-resumo-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;}
+.campo-resumo-val{font-size:20px;font-weight:800;}
+.campo-resumo-lbl{font-size:10px;color:var(--muted);margin-top:2px;}
+.campo-vazio{text-align:center;padding:50px 16px;color:var(--muted);}
+
+/* INVENTÁRIO */
+.inv-resumo{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+.inv-resumo-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;}
+.inv-resumo-val{font-size:20px;font-weight:800;}
+.inv-resumo-lbl{font-size:10px;color:var(--muted);margin-top:2px;}
+.inv-filtros{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.inv-filtros select,.inv-filtros input{padding:9px 10px;background:var(--card);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:12px;font-family:var(--font);-webkit-appearance:none;}
+.inv-filtros input{flex:1;min-width:120px;}
+.inv-obra-card{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:10px;overflow:hidden;}
+.inv-obra-header{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
+.inv-obra-nome{font-size:14px;font-weight:700;}
+.inv-obra-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.inv-obra-body{display:none;border-top:1px solid var(--border);}
+.inv-obra-body.open{display:block;}
+.inv-item{padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.inv-item:last-child{border-bottom:none;}
+.inv-item-icon{font-size:17px;flex-shrink:0;}
+.inv-item-info{flex:1;min-width:0;}
+.inv-item-nome{font-size:13px;font-weight:600;}
+.inv-item-det{font-size:11px;color:var(--muted);margin-top:2px;}
+.inv-item-right{text-align:right;flex-shrink:0;}
+.inv-item-qtd{font-size:14px;font-weight:800;color:var(--accent);}
+.inv-item-orig{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-top:3px;display:inline-block;}
+.orig-e{background:rgba(0,214,143,.1);color:var(--green);border:1px solid rgba(0,214,143,.3);}
+.orig-l{background:rgba(255,184,0,.1);color:var(--yellow);border:1px solid rgba(255,184,0,.3);}
+.inv-alerta{font-size:10px;padding:2px 6px;border-radius:8px;background:rgba(255,77,106,.1);color:var(--red);border:1px solid rgba(255,77,106,.3);margin-top:2px;display:inline-block;}
+.inv-obs{font-size:11px;color:var(--orange);margin-top:2px;font-style:italic;}
+
+/* EDIÇÃO INVENTÁRIO */
+.inv-edit-btn{padding:5px 10px;border-radius:7px;background:rgba(0,194,255,.1);border:1.5px solid rgba(0,194,255,.3);color:var(--accent);font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;}
+.inv-edit-form{background:var(--bg);border-top:1px solid var(--border);padding:12px 14px;display:none;}
+.inv-edit-form.open{display:block;}
+.inv-edit-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.inv-edit-input{width:100%;padding:8px 10px;background:var(--card);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-family:var(--font);}
+.inv-edit-input:focus{outline:none;border-color:var(--accent);}
+.inv-edit-btns{display:flex;gap:8px;margin-top:8px;}
+.btn-inv-save{flex:1;padding:9px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--accent2),var(--accent));color:#000;font-size:12px;font-weight:700;cursor:pointer;}
+.btn-inv-del{padding:9px 12px;border-radius:8px;background:rgba(255,77,106,.1);border:1.5px solid rgba(255,77,106,.3);color:var(--red);font-size:12px;font-weight:700;cursor:pointer;}
+.btn-inv-cancel{padding:9px 12px;border-radius:8px;background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:12px;cursor:pointer;}
+
+/* TRANSFERÊNCIA */
+.transf-card{background:rgba(0,119,255,.08);border:1.5px solid rgba(0,119,255,.3);border-radius:14px;margin-bottom:12px;overflow:hidden;}
+.transf-header{padding:13px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+.transf-tag{background:rgba(0,194,255,.15);color:var(--accent);border:1px solid rgba(0,194,255,.3);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.btn-conf-transf{flex:1;padding:10px;border:none;border-radius:10px;background:rgba(0,214,143,.15);border:1.5px solid var(--green);color:var(--green);font-size:13px;font-weight:700;cursor:pointer;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">📊</div>
+    <div><div class="logo-text">EICES Controle</div><div class="logo-sub">Painel do Responsável</div></div>
+  </div>
+  <div class="header-btns">
+    <button class="btn-sm accent" onclick="configurarURL()">⚙️ Config</button>
+    <div class="notif-btn" onclick="mudarTab('pendentes',document.querySelector('.tab'))">
+      🔔<div class="notif-badge" id="notif-badge">0</div>
+    </div>
+  </div>
+</div>
+
+<div class="conn-bar" id="conn-bar">
+  <div class="conn-dot checking" id="conn-dot"></div>
+  <span id="conn-txt">Verificando conexão...</span>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="mudarTab('pendentes',this)">⏳ Pendentes</div>
+  <div class="tab" onclick="mudarTab('historico',this)">📋 Histórico</div>
+  <div class="tab" onclick="mudarTab('campo',this)">📍 Campo</div>
+  <div class="tab" onclick="mudarTab('manutencao',this)">🔧 Manutenção</div>
+  <div class="tab" onclick="mudarTab('inventario',this)">📦 Inventário</div>
+</div>
+
+<div class="content">
+
+  <div class="tab-content active" id="tab-pendentes">
+    <div class="kpi-grid">
+      <div class="kpi p"><div class="kpi-val" id="kpi-p">0</div><div class="kpi-label">Pendentes</div></div>
+      <div class="kpi c"><div class="kpi-val" id="kpi-c">0</div><div class="kpi-label">Crítico</div></div>
+    </div>
+    <div id="lista-pendentes"></div>
+  </div>
+
+  <div class="tab-content" id="tab-historico">
+    <div class="kpi-grid">
+      <div class="kpi a"><div class="kpi-val" id="kpi-a">0</div><div class="kpi-label">Aprovadas</div></div>
+      <div class="kpi m"><div class="kpi-val" id="kpi-t">0</div><div class="kpi-label">Total</div></div>
+    </div>
+    <div class="filtros">
+      <select id="filt-tipo" onchange="renderHistorico()"><option value="todos">Todos</option><option value="Solicitação">Solicitações</option><option value="Manutenção">Manutenções</option></select>
+      <select id="filt-status" onchange="renderHistorico()"><option value="todos">Todos status</option><option value="Pendente">Pendente</option><option value="Aprovado">Aprovado</option><option value="Parcial">Parcial</option><option value="Rejeitado">Rejeitado</option></select>
+    </div>
+    <div id="lista-historico"></div>
+  </div>
+
+    <div class="tab-content" id="tab-campo">
+    <div class="campo-filtros">
+      <select id="campo-filtro-obra" onchange="renderCampo()">
+        <option value="todas">Todas as obras</option>
+        <option>ALPHA ONE</option><option>ATHUR PRADO</option><option>TANABI</option>
+        <option>VIRGÍLIO</option><option>ALTIER</option><option>MAURO</option>
+        <option>ANGELICA</option><option>ARENGA (TRISUL)</option><option>PJM</option>
+        <option>BIOMA</option><option>BALTAZAR</option><option>SAMPA CONSOLAÇÃO</option>
+        <option>ORIÇANGA</option><option>JOA</option><option>CUNHA GAGO</option>
+      </select>
+      <select id="campo-filtro-alerta" onchange="renderCampo()">
+        <option value="todos">Todos</option>
+        <option value="vencidos">⚠ Vencidos</option>
+        <option value="urgentes">⏰ Urgentes</option>
+      </select>
+    </div>
+    <div id="lista-campo"></div>
+  </div>
+
+  <div class="tab-content" id="tab-manutencao">
+    <div class="kpi-grid">
+      <div class="kpi p"><div class="kpi-val" id="kpi-mp">0</div><div class="kpi-label">Pendentes</div></div>
+      <div class="kpi c"><div class="kpi-val" id="kpi-ma">0</div><div class="kpi-label">Alta urgência</div></div>
+    </div>
+    <div id="lista-manutencao"></div>
+  </div>
+
+  <!-- INVENTÁRIO -->
+  <div class="tab-content" id="tab-inventario">
+    <div class="inv-filtros">
+      <input type="text" id="inv-busca" placeholder="🔍 Buscar ferramenta ou patrimônio..." oninput="renderInventario()">
+    </div>
+    <div class="inv-filtros">
+      <select id="inv-obra" onchange="renderInventario()" style="flex:1">
+        <option value="todas">Todas as obras</option>
+        <option>ALPHA ONE</option><option>ATHUR PRADO</option><option>TANABI</option>
+        <option>VIRGÍLIO</option><option>ALTIER</option><option>MAURO</option>
+        <option>ANGELICA</option><option>ARENGA (TRISUL)</option><option>PJM</option>
+        <option>BIOMA</option><option>BALTAZAR</option><option>SAMPA CONSOLAÇÃO</option>
+        <option>ORIÇANGA</option><option>JOA</option><option>CUNHA GAGO</option>
+      </select>
+      <select id="inv-origem" onchange="renderInventario()">
+        <option value="todos">EICES + Locado</option>
+        <option value="EICES">Só EICES</option>
+        <option value="LOCADO">Só Locado</option>
+      </select>
+    </div>
+    <div class="inv-resumo" id="inv-resumo"></div>
+    <div id="inv-lista"></div>
+  </div>
+
+</div>
+
+<!-- MODAL APROVAÇÃO -->
+<div class="overlay" id="ov-aprovar">
+  <div class="modal">
+    <div class="modal-title">✅ Aprovar Solicitação</div>
+    <div class="modal-sub" id="modal-info"></div>
+    <div id="modal-ferr-lista"></div>
+    <div class="modal-field" style="margin-top:12px">
+      <label class="modal-label">Data de entrega prevista</label>
+      <input type="date" class="modal-input" id="modal-data-ent">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Observação para o supervisor</label>
+      <textarea class="modal-input" id="modal-obs" rows="2" placeholder="Ex: Ferramentas separadas, retirar amanhã..."></textarea>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-modal-cancel" onclick="fecharModal('ov-aprovar')">Cancelar</button>
+      <button class="btn-modal-ok" onclick="confirmarAprovacao()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL REJEIÇÃO -->
+<div class="overlay" id="ov-rejeitar">
+  <div class="modal">
+    <div class="modal-title">❌ Rejeitar Solicitação</div>
+    <div class="modal-field">
+      <label class="modal-label">Motivo *</label>
+      <textarea class="modal-input" id="modal-motivo" rows="3" placeholder="Ex: Ferramenta em uso em outra obra..."></textarea>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-modal-cancel" onclick="fecharModal('ov-rejeitar')">Cancelar</button>
+      <button class="btn-modal-ok" style="background:var(--red);color:white" onclick="confirmarRejeicao()">Rejeitar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MANUTENÇÃO -->
+<div class="overlay" id="ov-manutencao">
+  <div class="modal">
+    <div class="modal-title">🔧 Responder Manutenção</div>
+    <div id="modal-man-info" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px;font-size:13px;"></div>
+    <div class="modal-field">
+      <label class="modal-label">Status</label>
+      <select class="modal-input" id="modal-man-status">
+        <option>Em Análise</option><option>Programado</option><option>Em Execução</option><option>Concluído</option><option>Rejeitado</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Previsão de atendimento</label>
+      <input type="date" class="modal-input" id="modal-man-data">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Resposta para o supervisor</label>
+      <textarea class="modal-input" id="modal-man-obs" rows="2" placeholder="Descreva o encaminhamento..."></textarea>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-modal-cancel" onclick="fecharModal('ov-manutencao')">Cancelar</button>
+      <button class="btn-modal-ok" onclick="confirmarManutencao()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL EDIÇÃO -->
+<div class="overlay" id="ov-editar">
+  <div class="modal">
+    <div class="modal-title">✏️ Editar Solicitação</div>
+
+    <!-- Info básica -->
+    <div class="edit-section">
+      <div class="edit-section-title">📋 Dados da Solicitação</div>
+      <div class="edit-field">
+        <label class="edit-label">Obra</label>
+        <select class="edit-input" id="edit-obra">
+          <option>ALPHA ONE</option><option>ATHUR PRADO</option><option>TANABI</option>
+          <option>VIRGÍLIO</option><option>ALTIER</option><option>MAURO</option>
+          <option>ANGELICA</option><option>ARENGA (TRISUL)</option><option>PJM</option>
+          <option>BIOMA</option><option>BALTAZAR</option><option>SAMPA CONSOLAÇÃO</option>
+          <option>ORIÇANGA</option><option>JOA</option><option>CUNHA GAGO</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="edit-field">
+          <label class="edit-label">Urgência</label>
+          <select class="edit-input" id="edit-urgencia">
+            <option value="Normal">Normal</option>
+            <option value="Urgente">Urgente</option>
+            <option value="Crítico">🚨 Crítico</option>
+          </select>
+        </div>
+        <div class="edit-field">
+          <label class="edit-label">Status</label>
+          <select class="edit-input" id="edit-status">
+            <option value="Pendente">⏳ Pendente</option>
+            <option value="Aprovado">✅ Aprovado</option>
+            <option value="Parcial">🔶 Parcial</option>
+            <option value="Rejeitado">❌ Rejeitado</option>
+          </select>
+        </div>
+      </div>
+      <div class="edit-field">
+        <label class="edit-label">Data necessidade</label>
+        <input type="date" class="edit-input" id="edit-data-nec">
+      </div>
+      <div class="edit-field">
+        <label class="edit-label">Observação</label>
+        <textarea class="edit-input" id="edit-obs" rows="2"></textarea>
+      </div>
+    </div>
+
+    <!-- Ferramentas -->
+    <div class="edit-section" id="edit-ferr-section" style="margin-top:10px">
+      <div class="edit-section-title">🔧 Ferramentas</div>
+      <div id="edit-ferr-lista"></div>
+      <button onclick="adicionarFerramenta()" style="width:100%;margin-top:10px;padding:9px;border:1.5px dashed var(--border);border-radius:8px;background:transparent;color:var(--muted);font-size:13px;cursor:pointer;">+ Adicionar ferramenta</button>
+    </div>
+
+    <!-- Resposta do controle -->
+    <div class="edit-section" style="margin-top:10px">
+      <div class="edit-section-title">💬 Resposta do Controle</div>
+      <div class="edit-field">
+        <label class="edit-label">Data de entrega</label>
+        <input type="date" class="edit-input" id="edit-data-ent">
+      </div>
+      <div class="edit-field">
+        <label class="edit-label">Observação para o supervisor</label>
+        <textarea class="edit-input" id="edit-obs-resp" rows="2" placeholder="Informe detalhes da aprovação ou rejeição..."></textarea>
+      </div>
+    </div>
+
+    <div class="edit-btns">
+      <button class="btn-cancelar-edit" onclick="fecharModal('ov-editar')">Cancelar</button>
+      <button class="btn-salvar" onclick="salvarEdicao()">💾 Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL TRANSFERÊNCIA -->
+<div class="overlay" id="ov-transferencia">
+  <div class="modal">
+    <div class="modal-title">🔄 Confirmar Transferência</div>
+    <div id="modal-transf-info" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px;font-size:13px;"></div>
+    <div class="modal-field">
+      <label class="modal-label">Observação (opcional)</label>
+      <textarea class="modal-input" id="modal-transf-obs" rows="2" placeholder="Ex: Transferido com todos os acessórios..."></textarea>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-modal-cancel" onclick="fecharModal('ov-transferencia')">Cancelar</button>
+      <button class="btn-modal-ok" onclick="confirmarTransferencia()">✅ Confirmar e Atualizar Inventário</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══ CONFIG ══
+let BACKEND_URL = 'https://script.google.com/macros/s/AKfycbzi3rXXap4Ariyam8VkwVSaN6FicwGUUQ-VaaYFIEnwVeL-Vr6IkFBX6e3Xf_HwdJ9dvQ/exec'; // URL configurada — não alterar
+let registros = [];
+let solAtiva = null;
+let ferrStatusTemp = {};
+let connOk = false;
+
+// ══ CONEXÃO ══
+function configurarURL() {
+  const url = prompt('Cole aqui a URL do Apps Script (Web App):\n\nFormato: https://script.google.com/macros/s/.../exec', BACKEND_URL);
+  if (url && url.startsWith('https://')) {
+    BACKEND_URL = url.trim();
+    localStorage.setItem('eices_backend_url', BACKEND_URL);
+    verificarConexao();
+  }
+}
+
+async function verificarConexao() {
+  const dot=document.getElementById('conn-dot');
+  const txt=document.getElementById('conn-txt');
+  if (!BACKEND_URL) {
+    dot.className='conn-dot err'; txt.textContent='Servidor não configurado — clique em ⚙️ Config'; connOk=false; return;
+  }
+  dot.className='conn-dot checking'; txt.textContent='Conectando...';
+  try {
+    const r = await fetch(BACKEND_URL+'?acao=ping', {signal:AbortSignal.timeout(8000)});
+    const d = await r.json();
+    if (d.status==='ok') {
+      dot.className='conn-dot ok'; txt.textContent='Conectado — dados em tempo real ✓'; connOk=true;
+      carregarDoBackend();
+    } else throw new Error();
+  } catch(e) {
+    dot.className='conn-dot err'; txt.textContent='Sem conexão com servidor'; connOk=false;
+  }
+}
+
+// ══ BACKEND ══
+async function carregarDoBackend() {
+  if (!BACKEND_URL) return;
+  try {
+    const r = await fetch(BACKEND_URL+'?acao=listar&email=controle', {signal:AbortSignal.timeout(10000)});
+    const dados = await r.json();
+    if (Array.isArray(dados)) {
+      registros = dados;
+      localStorage.setItem('eices_registros_ctrl', JSON.stringify(dados));
+      renderTudo();
+      atualizarBadge();
+    }
+  } catch(e) {
+    // Usa cache local
+    const cache = localStorage.getItem('eices_registros_ctrl');
+    if (cache) { registros = JSON.parse(cache); renderTudo(); atualizarBadge(); }
+  }
+}
+
+async function sincronizarStatus(protocolo, status, resposta, ferramentas) {
+  // Atualiza cache local imediatamente
+  const idx = registros.findIndex(r=>r.protocolo===protocolo);
+  if (idx>=0) {
+    registros[idx].status = status;
+    registros[idx].resposta = resposta;
+    if (ferramentas) registros[idx].ferramentas = ferramentas;
+    localStorage.setItem('eices_registros_ctrl', JSON.stringify(registros));
+  }
+  // Sincroniza com backend
+  if (!BACKEND_URL) return;
+  try {
+    await fetch(BACKEND_URL, {
+      method:'POST',
+      body: JSON.stringify({acao:'atualizar_status', protocolo, status, resposta, ferramentas}),
+      signal: AbortSignal.timeout(10000)
+    });
+    toast('✅ Resposta sincronizada com o servidor','ok');
+  } catch(e) {
+    toast('⚠️ Atualizado localmente — verifique conexão','');
+  }
+}
+
+// ══ INIT ══
+function limparHistorico() {
+  localStorage.removeItem('eices_registros_ctrl');
+  registros = [];
+  renderTudo();
+  atualizarBadge();
+}
+
+function init() {
+  // Zera cache local de registros
+  localStorage.removeItem('eices_registros_ctrl');
+  verificarConexao();
+  setInterval(()=>{ if(connOk) carregarDoBackend(); }, 15000);
+}
+
+function renderTudo() {
+  renderPendentes(); renderHistorico(); renderCampo(); renderManutencao(); atualizarKPIs();
+}
+
+// ══ KPIs ══
+function atualizarKPIs() {
+  const sols  = registros.filter(r=>r.tipo==='Solicitação');
+  const mans  = registros.filter(r=>r.tipo==='Manutenção');
+  const pend  = sols.filter(r=>r.status==='Pendente');
+  const crit  = pend.filter(r=>r.urgencia==='Crítico');
+  const aprov = sols.filter(r=>r.status==='Aprovado');
+  const mpend = mans.filter(r=>r.status==='Pendente');
+  const malt  = mpend.filter(r=>r.urgencia==='Alta');
+  document.getElementById('kpi-p').textContent = pend.length;
+  document.getElementById('kpi-c').textContent = crit.length;
+  document.getElementById('kpi-a').textContent = aprov.length;
+  document.getElementById('kpi-t').textContent = registros.length;
+  document.getElementById('kpi-mp').textContent= mpend.length;
+  document.getElementById('kpi-ma').textContent= malt.length;
+}
+
+function atualizarBadge() {
+  const n = registros.filter(r=>r.status==='Pendente').length;
+  const b = document.getElementById('notif-badge');
+  b.textContent=n; b.className='notif-badge'+(n>0?' show':'');
+}
+
+// ══ RENDERS ══
+function renderPendentes() {
+  const el=document.getElementById('lista-pendentes');
+  const lista=registros.filter(r=>r.status==='Pendente'&&r.tipo==='Solicitação')
+    .sort((a,b)=>{const o={Crítico:0,Urgente:1,Normal:2};return(o[a.urgencia]||2)-(o[b.urgencia]||2);});
+  if(!lista.length){el.innerHTML='<div class="empty"><div class="empty-icon">✅</div><div>Nenhuma solicitação pendente</div></div>';return;}
+  el.innerHTML=lista.map(r=>cardSol(r,true)).join('');
+}
+
+function renderHistorico() {
+  const el=document.getElementById('lista-historico');
+  let lista=[...registros];
+  const ft=document.getElementById('filt-tipo').value;
+  const fs=document.getElementById('filt-status').value;
+  if(ft!=='todos') lista=lista.filter(r=>r.tipo===ft);
+  if(fs!=='todos') lista=lista.filter(r=>r.status===fs);
+  if(!lista.length){el.innerHTML='<div class="empty"><div class="empty-icon">📋</div><div>Nenhum registro</div></div>';return;}
+  el.innerHTML=lista.map(r=>cardSol(r,false)).join('');
+}
+
+
+function renderCampo() {
+  const el = document.getElementById('lista-campo');
+  const filtroObra   = document.getElementById('campo-filtro-obra')?.value || 'todas';
+  const filtroAlerta = document.getElementById('campo-filtro-alerta')?.value || 'todos';
+
+  // Coleta todas as ferramentas aprovadas
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const itensEmCampo = [];
+
+  registros.filter(r => r.tipo === 'Solicitação' && (r.status === 'Aprovado' || r.status === 'Parcial'))
+    .forEach(r => {
+      (r.ferramentas || []).filter(f => f.status === 'Aprovado').forEach(f => {
+        const prevDev = r.resposta?.data_entrega || '';
+        let alerta = 'ok';
+        if (prevDev) {
+          const dDev = new Date(prevDev + 'T00:00:00');
+          const diff = Math.floor((dDev - hoje) / 86400000);
+          if (diff < 0)      alerta = 'vencido';
+          else if (diff <= 2) alerta = 'hoje';
+          else                alerta = 'ok';
+        } else { alerta = 'sem_data'; }
+
+        itensEmCampo.push({
+          obra:       r.obra,
+          ferramenta: f.nome,
+          patrimonio: f.patrimonio || '',
+          qtd:        f.qtd || 1,
+          valor:      (f.valor || 0) * (f.qtd || 1),
+          supervisor: r.supervisor,
+          data_saida: r.data_solicitacao,
+          prev_dev:   prevDev,
+          protocolo:  r.protocolo,
+          alerta
+        });
+      });
+    });
+
+  if (!itensEmCampo.length) {
+    el.innerHTML = '<div class="campo-vazio"><div style="font-size:36px;margin-bottom:10px">📍</div><div>Nenhuma ferramenta em campo no momento</div></div>';
+    return;
+  }
+
+  // Aplica filtros
+  let filtrados = [...itensEmCampo];
+  if (filtroObra !== 'todas') filtrados = filtrados.filter(i => i.obra === filtroObra);
+  if (filtroAlerta === 'vencidos') filtrados = filtrados.filter(i => i.alerta === 'vencido');
+  if (filtroAlerta === 'urgentes') filtrados = filtrados.filter(i => i.alerta === 'hoje' || i.alerta === 'vencido');
+
+  // Agrupa por obra
+  const porObra = {};
+  filtrados.forEach(i => {
+    if (!porObra[i.obra]) porObra[i.obra] = [];
+    porObra[i.obra].push(i);
+  });
+
+  // Totais gerais
+  const totalFerr  = filtrados.length;
+  const totalValor = filtrados.reduce((s, i) => s + i.valor, 0);
+  const totalVenc  = filtrados.filter(i => i.alerta === 'vencido').length;
+
+  // Resumo geral
+  const resumoHtml = `
+    <div class="campo-resumo">
+      <div class="campo-resumo-item">
+        <div class="campo-resumo-val" style="color:var(--accent)">${Object.keys(porObra).length}</div>
+        <div class="campo-resumo-lbl">Obras</div>
+      </div>
+      <div class="campo-resumo-item">
+        <div class="campo-resumo-val" style="color:var(--text)">${totalFerr}</div>
+        <div class="campo-resumo-lbl">Ferramentas</div>
+      </div>
+      <div class="campo-resumo-item">
+        <div class="campo-resumo-val" style="color:${totalVenc>0?'var(--red)':'var(--green)'}">${totalVenc}</div>
+        <div class="campo-resumo-lbl">Vencidos</div>
+      </div>
+    </div>`;
+
+  // Cards por obra
+  const icons = {
+    'Perfuratriz':'⚡','Parafusadeira':'🔩','Furadeira':'🔵','Furadeira Rompedora':'💥',
+    'Martelete 5KG':'🔨','Martelete 10KG':'🔨','Laser':'📡','Tripé Laser':'📐',
+    'Esmerilhadeira':'⚙️','Lixadeira':'🔧','Serra Mármore':'🪚','Pistola Finca Pino':'🔫',
+    'Prensa PEX':'🗜️','Prensa Gás':'🗜️','Termofusor':'🌡️','Soprador':'💨',
+    'Compressor':'🫧','Máquina de Ranhura':'⚙️','Máquina Teste Água':'💧',
+    'Rádio':'📻','Andaime':'🏗️','Prensa Terminal':'🔌',
+  };
+
+  const cardsHtml = Object.entries(porObra).map(([obra, itens], idx) => {
+    const totalObraVal = itens.reduce((s,i)=>s+i.valor,0);
+    const vencObra     = itens.filter(i=>i.alerta==='vencido').length;
+    const hojObra      = itens.filter(i=>i.alerta==='hoje').length;
+
+    const ferrsHtml = itens.map(i => {
+      const alertaHtml = i.alerta === 'vencido'
+        ? `<span class="campo-alerta alerta-venc">⚠ VENCIDO</span>`
+        : i.alerta === 'hoje'
+        ? `<span class="campo-alerta alerta-hoje">⏰ Vence em breve</span>`
+        : i.prev_dev
+        ? `<span class="campo-alerta alerta-ok">✓ ${fmtData(i.prev_dev)}</span>`
+        : `<span style="font-size:10px;color:var(--muted)">Sem previsão</span>`;
+
+      return `<div class="campo-ferr-row">
+        <div class="campo-ferr-icon">${icons[i.ferramenta]||'🔧'}</div>
+        <div class="campo-ferr-info">
+          <div class="campo-ferr-nome">${i.ferramenta} ${i.qtd>1?'×'+i.qtd:''}</div>
+          <div class="campo-ferr-pat">${i.patrimonio?'📋 '+i.patrimonio+' · ':''} 👤 ${i.supervisor.split(' ')[0]} · Saída: ${fmtDataHora(i.data_saida)}</div>
+        </div>
+        <div class="campo-ferr-right">
+          <div class="campo-ferr-val">R$ ${i.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+          ${alertaHtml}
+        </div>
+      </div>`;
+    }).join('');
+
+    const alertaObra = vencObra > 0
+      ? `<span class="badge rejeitado">⚠ ${vencObra} vencido(s)</span>`
+      : hojObra > 0
+      ? `<span class="badge urgente">⏰ ${hojObra} urgente(s)</span>`
+      : '';
+
+    return `<div class="campo-obra-card">
+      <div class="campo-obra-header" onclick="toggleCampoObra(${idx})">
+        <div>
+          <div class="campo-obra-nome">📍 ${obra}</div>
+          <div class="campo-obra-sub">${itens.length} ferramenta(s)</div>
+        </div>
+        <div class="campo-obra-right">
+          <div class="campo-obra-total">R$ ${totalObraVal.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+          ${alertaObra}
+          <span style="color:var(--muted);font-size:14px" id="campo-arr-${idx}">▼</span>
+        </div>
+      </div>
+      <div class="campo-obra-body" id="campo-body-${idx}">
+        ${ferrsHtml}
+        <div class="campo-footer">
+          <div class="campo-footer-item">
+            <div class="campo-footer-val" style="color:var(--accent)">${itens.length}</div>
+            <div class="campo-footer-lbl">Itens</div>
+          </div>
+          <div class="campo-footer-item">
+            <div class="campo-footer-val" style="color:var(--red)">${vencObra}</div>
+            <div class="campo-footer-lbl">Vencidos</div>
+          </div>
+          <div class="campo-footer-item">
+            <div class="campo-footer-val" style="color:var(--accent)">R$ ${totalObraVal.toLocaleString('pt-BR',{minimumFractionDigits:0})}</div>
+            <div class="campo-footer-lbl">Total</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = resumoHtml + cardsHtml;
+}
+
+function toggleCampoObra(idx) {
+  const body = document.getElementById('campo-body-'+idx);
+  const arr  = document.getElementById('campo-arr-'+idx);
+  const open = body.classList.toggle('open');
+  arr.textContent = open ? '▲' : '▼';
+}
+
+
+function renderManutencao() {
+  const el=document.getElementById('lista-manutencao');
+  const lista=registros.filter(r=>r.tipo==='Manutenção')
+    .sort((a,b)=>{const o={Alta:0,Média:1,Baixa:2};return(o[a.urgencia]||2)-(o[b.urgencia]||2);});
+  if(!lista.length){el.innerHTML='<div class="empty"><div class="empty-icon">🔧</div><div>Nenhuma manutenção</div></div>';return;}
+  const urgCor={Alta:'var(--red)',Média:'var(--yellow)',Baixa:'var(--green)'};
+  el.innerHTML=lista.map(r=>`
+    <div class="sol-card">
+      <div class="sol-header">
+        <div><div class="sol-obra">🔧 ${r.patrimonio||r.equipamento||'Equipamento'} ${r.ferramenta?'— '+r.ferramenta:''}</div>
+        <div class="sol-sub">👤 ${r.supervisor} · ${r.protocolo}</div></div>
+        <div class="badges"><span class="badge ${r.status.toLowerCase()}">${r.status}</span>
+        <span style="font-size:11px;font-weight:700;color:${urgCor[r.urgencia]||'var(--muted)'}">⚠ ${r.urgencia}</span></div>
+      </div>
+      <div class="sol-obs">💬 ${r.descricao||''}</div>
+      <div class="sol-meta"><div>Em uso: <strong>${r.em_uso||'—'}</strong></div><div>${fmtDataHora(r.data_solicitacao)}</div></div>
+      ${r.status==='Pendente'?`<div class="sol-actions"><button class="btn-aprovar" onclick="abrirManutencao('${r.protocolo}')">📋 Responder</button></div>`:''}
+    </div>`).join('');
+}
+
+function cardSol(r, mostrarAcoes) {
+  const isSol=r.tipo==='Solicitação';
+  const statusLabel={Pendente:'⏳ Pendente',Aprovado:'✅ Aprovado',Parcial:'🔶 Parcial',Rejeitado:'❌ Rejeitado'}[r.status]||r.status;
+  const urgBadge=r.urgencia==='Crítico'?'<span class="badge critico">🚨 CRÍTICO</span>':r.urgencia==='Urgente'?'<span class="badge urgente">⚡ URGENTE</span>':'';
+  const ferrHtml=isSol&&r.ferramentas?`<div class="sol-ferrs">${(r.ferramentas||[]).map(f=>{
+    const cls=f.status==='Aprovado'?'f-a':f.status==='Rejeitado'?'f-r':'f-p';
+    return `<div class="ferr-tag"><div class="f-dot ${cls}"></div>${f.nome} <span>×${f.qtd}</span></div>`;
+  }).join('')}</div>`:'';
+  const ehTransf = r.ferramentas && r.ferramentas[0]?.tipo === 'Transferência';
+  const acoesTransf = mostrarAcoes && ehTransf
+    ? `<div class="sol-actions"><button class="btn-conf-transf" onclick="abrirTransferencia('${r.protocolo}')">🔄 Confirmar Transferência e Atualizar Inventário</button></div>`
+    : '';
+  const acoes=mostrarAcoes&&isSol&&!ehTransf?`<div class="sol-actions"><button class="btn-aprovar" onclick="abrirAprovacao('${r.protocolo}')">✅ Aprovar / Parcial</button><button class="btn-rejeitar" onclick="abrirRejeicao('${r.protocolo}')">❌</button></div>`:'';
+  const btnEditar = `<button class="btn-editar" onclick="abrirEdicao('${r.protocolo}')">✏️ Editar</button>`;
+  return `<div class="sol-card">
+    <div class="sol-header">
+      <div><div class="sol-obra">${r.obra||r.tipo}</div><div class="sol-sub">👤 ${r.supervisor} · ${r.protocolo}</div></div>
+      <div class="badges"><span class="badge ${(r.status||'').toLowerCase()}">${statusLabel}</span>${urgBadge}</div>
+    </div>
+    ${ferrHtml}
+    ${r.observacao?`<div class="sol-obs">💬 "${r.observacao}"</div>`:''}
+    <div class="sol-meta"><div>Solicitado <strong>${fmtDataHora(r.data_solicitacao)}</strong></div>${r.data_necessidade?`<div>Necessidade <strong>${fmtData(r.data_necessidade)}</strong></div>`:''}</div>
+    ${acoesTransf}
+    ${acoes}
+    ${!mostrarAcoes ? `<div style="padding:10px 14px;border-top:1px solid var(--border)">${btnEditar}</div>` : `<div style="padding:4px 14px 10px;display:flex;justify-content:flex-end">${btnEditar}</div>`}
+  </div>`;
+}
+
+// ══ APROVAÇÃO ══
+function abrirAprovacao(proto) {
+  solAtiva=registros.find(r=>r.protocolo===proto);
+  if(!solAtiva) return;
+  if(!ferrStatusTemp[proto]) {
+    ferrStatusTemp[proto]={};
+    (solAtiva.ferramentas||[]).forEach(f=>ferrStatusTemp[proto][f.nome]='Pendente');
+  }
+  document.getElementById('modal-info').innerHTML=`<strong>${solAtiva.obra}</strong> — ${solAtiva.supervisor}<br><span style="color:var(--muted)">Defina o status de cada ferramenta:</span>`;
+  document.getElementById('modal-ferr-lista').innerHTML=(solAtiva.ferramentas||[]).map(f=>{
+    const st=ferrStatusTemp[proto][f.nome]||'Pendente';
+    return `<div class="ferr-aprov-item">
+      <div class="ferr-aprov-top"><div><div class="ferr-aprov-nome">${f.nome}</div><div class="ferr-aprov-qtd">Qtd: ${f.qtd}</div></div>
+      <div class="ferr-btns">
+        <button class="btn-fs ${st==='Aprovado'?'fa':''}" onclick="setFS('${proto}','${f.nome}','Aprovado',this)">✅ Aprovar</button>
+        <button class="btn-fs ${st==='Rejeitado'?'fr':''}" onclick="setFS('${proto}','${f.nome}','Rejeitado',this)">❌</button>
+      </div></div>
+    </div>`;
+  }).join('');
+  document.getElementById('modal-data-ent').value='';
+  document.getElementById('modal-obs').value='';
+  document.getElementById('ov-aprovar').classList.add('show');
+}
+
+function setFS(proto, nome, status, btn) {
+  ferrStatusTemp[proto][nome]=status;
+  const item=btn.closest('.ferr-aprov-item');
+  item.querySelectorAll('.btn-fs').forEach(b=>b.classList.remove('fa','fr'));
+  btn.classList.add(status==='Aprovado'?'fa':'fr');
+}
+
+function confirmarAprovacao() {
+  if(!solAtiva) return;
+  const proto=solAtiva.protocolo;
+  const sts=ferrStatusTemp[proto]||{};
+  (solAtiva.ferramentas||[]).forEach(f=>f.status=sts[f.nome]||'Pendente');
+  const total=(solAtiva.ferramentas||[]).length;
+  const aprov=(solAtiva.ferramentas||[]).filter(f=>f.status==='Aprovado').length;
+  const rejeit=(solAtiva.ferramentas||[]).filter(f=>f.status==='Rejeitado').length;
+  const novoStatus = aprov===total?'Aprovado': aprov>0?'Parcial': rejeit===total?'Rejeitado':'Parcial';
+  const resposta={data_entrega:document.getElementById('modal-data-ent').value, obs:document.getElementById('modal-obs').value, data_resposta:new Date().toISOString(), visto_supervisor:false};
+  sincronizarStatus(proto, novoStatus, resposta, solAtiva.ferramentas);
+  fecharModal('ov-aprovar');
+  renderTudo(); atualizarBadge();
+  toast(novoStatus==='Aprovado'?'✅ Aprovado!':novoStatus==='Parcial'?'🔶 Aprovação parcial':'❌ Rejeitado', novoStatus==='Aprovado'?'ok':'');
+}
+
+function abrirRejeicao(proto) {
+  solAtiva=registros.find(r=>r.protocolo===proto);
+  document.getElementById('modal-motivo').value='';
+  document.getElementById('ov-rejeitar').classList.add('show');
+}
+
+function confirmarRejeicao() {
+  if(!solAtiva) return;
+  const motivo=document.getElementById('modal-motivo').value.trim();
+  if(!motivo){toast('Informe o motivo','err');return;}
+  (solAtiva.ferramentas||[]).forEach(f=>f.status='Rejeitado');
+  const resposta={motivo, data_resposta:new Date().toISOString(), visto_supervisor:false};
+  sincronizarStatus(solAtiva.protocolo,'Rejeitado',resposta,solAtiva.ferramentas);
+  fecharModal('ov-rejeitar');
+  renderTudo(); atualizarBadge();
+  toast('❌ Solicitação rejeitada','err');
+}
+
+// ══ MANUTENÇÃO RESPOSTA ══
+function abrirManutencao(proto) {
+  solAtiva=registros.find(r=>r.protocolo===proto);
+  if(!solAtiva) return;
+  document.getElementById('modal-man-info').innerHTML=`<strong>${solAtiva.patrimonio||solAtiva.equipamento||'Equipamento'}</strong>${solAtiva.ferramenta?' — '+solAtiva.ferramenta:''}<br><span style="color:var(--muted)">${solAtiva.descricao||''}</span>`;
+  document.getElementById('modal-man-obs').value='';
+  document.getElementById('modal-man-data').value='';
+  document.getElementById('ov-manutencao').classList.add('show');
+}
+
+function confirmarManutencao() {
+  if(!solAtiva) return;
+  const st=document.getElementById('modal-man-status').value;
+  const resposta={status_man:st, data_atendimento:document.getElementById('modal-man-data').value, obs:document.getElementById('modal-man-obs').value, data_resposta:new Date().toISOString(), visto_supervisor:false};
+  const novoStatus=st==='Concluído'?'Aprovado':'Parcial';
+  sincronizarStatus(solAtiva.protocolo, novoStatus, resposta, null);
+  fecharModal('ov-manutencao');
+  renderTudo();
+  toast('✅ Resposta de manutenção salva','ok');
+}
+
+// ══ UTILS ══
+function fecharModal(id){document.getElementById(id).classList.remove('show');solAtiva=null;}
+function mudarTab(id,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+  if(id==='historico') renderHistorico();
+  if(id==='campo') renderCampo();
+  if(id==='inventario') renderInventario();
+  if(connOk) carregarDoBackend();
+}
+function fmtData(d){if(!d)return'—';const[y,m,dd]=d.split('-');return`${dd}/${m}/${y}`;}
+function fmtDataHora(iso){if(!iso)return'—';return new Date(iso).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}
+function toast(msg,tipo){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(tipo||'');setTimeout(()=>t.className='toast',3500);}
+
+
+// ══ EDIÇÃO ══════════════════════════════════════════════════════
+let solEditando = null;
+const FERRAMENTAS_LISTA = [
+  'Perfuratriz','Parafusadeira','Furadeira','Furadeira Rompedora',
+  'Martelete 5KG','Martelete 10KG','Laser','Tripé Laser',
+  'Esmerilhadeira','Lixadeira','Serra Mármore','Pistola Finca Pino',
+  'Prensa PEX','Prensa Gás','Termofusor','Soprador','Compressor',
+  'Máquina de Ranhura','Máquina Teste Água','Rádio','Andaime','Prensa Terminal'
+];
+
+function abrirEdicao(proto) {
+  solEditando = registros.find(r => r.protocolo === proto);
+  if (!solEditando) return;
+
+  // Preenche campos
+  document.getElementById('edit-obra').value     = solEditando.obra || '';
+  document.getElementById('edit-urgencia').value = solEditando.urgencia || 'Normal';
+  document.getElementById('edit-status').value   = solEditando.status || 'Pendente';
+  document.getElementById('edit-data-nec').value = solEditando.data_necessidade || '';
+  document.getElementById('edit-obs').value      = solEditando.observacao || '';
+
+  const resp = solEditando.resposta || {};
+  document.getElementById('edit-data-ent').value = resp.data_entrega || '';
+  document.getElementById('edit-obs-resp').value = resp.obs || '';
+
+  // Ferramentas
+  const isSol = solEditando.tipo === 'Solicitação';
+  document.getElementById('edit-ferr-section').style.display = isSol ? 'block' : 'none';
+  if (isSol) renderEditFerr();
+
+  document.getElementById('ov-editar').classList.add('show');
+}
+
+function renderEditFerr() {
+  if (!solEditando) return;
+  const ferrs = solEditando.ferramentas || [];
+  document.getElementById('edit-ferr-lista').innerHTML = ferrs.map((f, i) => `
+    <div class="edit-ferr-item">
+      <select class="edit-ferr-qtd" style="width:50px" onchange="updateFerr(${i},'qtd',this.value)">
+        ${[1,2,3,4,5,6,8,10].map(n=>`<option ${f.qtd==n?'selected':''}>${n}</option>`).join('')}
+      </select>
+      <select class="edit-input edit-ferr-nome" style="flex:1;padding:6px 8px;font-size:12px" onchange="updateFerr(${i},'nome',this.value)">
+        ${FERRAMENTAS_LISTA.map(n=>`<option ${f.nome===n?'selected':''}>${n}</option>`).join('')}
+      </select>
+      <select class="edit-input" style="width:90px;padding:6px 8px;font-size:11px" onchange="updateFerr(${i},'status',this.value)">
+        <option ${f.status==='Pendente'?'selected':''} value="Pendente">⏳ Pend.</option>
+        <option ${f.status==='Aprovado'?'selected':''} value="Aprovado">✅ Aprov.</option>
+        <option ${f.status==='Rejeitado'?'selected':''} value="Rejeitado">❌ Rej.</option>
+      </select>
+      <button class="edit-ferr-del" onclick="removerFerr(${i})">✕</button>
+    </div>`).join('');
+}
+
+function updateFerr(idx, campo, val) {
+  if (!solEditando || !solEditando.ferramentas) return;
+  solEditando.ferramentas[idx][campo] = campo === 'qtd' ? parseInt(val) : val;
+}
+
+function removerFerr(idx) {
+  if (!solEditando || !solEditando.ferramentas) return;
+  solEditando.ferramentas.splice(idx, 1);
+  renderEditFerr();
+}
+
+function adicionarFerramenta() {
+  if (!solEditando) return;
+  if (!solEditando.ferramentas) solEditando.ferramentas = [];
+  solEditando.ferramentas.push({nome:'Perfuratriz', qtd:1, valor:300, status:'Pendente'});
+  renderEditFerr();
+}
+
+async function salvarEdicao() {
+  if (!solEditando) return;
+
+  // Atualiza campos
+  solEditando.obra             = document.getElementById('edit-obra').value;
+  solEditando.urgencia         = document.getElementById('edit-urgencia').value;
+  solEditando.status           = document.getElementById('edit-status').value;
+  solEditando.data_necessidade = document.getElementById('edit-data-nec').value;
+  solEditando.observacao       = document.getElementById('edit-obs').value;
+
+  if (!solEditando.resposta) solEditando.resposta = {};
+  solEditando.resposta.data_entrega = document.getElementById('edit-data-ent').value;
+  solEditando.resposta.obs          = document.getElementById('edit-obs-resp').value;
+  solEditando.resposta.data_resposta= new Date().toISOString();
+  solEditando.resposta.visto_supervisor = false;
+
+  // Sincroniza
+  await sincronizarStatus(
+    solEditando.protocolo,
+    solEditando.status,
+    solEditando.resposta,
+    solEditando.ferramentas
+  );
+
+  fecharModal('ov-editar');
+  renderTudo();
+  atualizarBadge();
+  toast('💾 Alterações salvas!', 'ok');
+}
+// ══ FIM EDIÇÃO ══
+
+// ══ INVENTÁRIO ════════════════════════════════════════════════════
+const INVENTARIO = [
+  // ALPHA ONE
+  {obra:'ALPHA ONE', ferramenta:'MARTELETE 5KG',      patrimonio:'',        qtd:2, origem:'LOCADO', fornec:'ONIX',    obs:''},
+  {obra:'ALPHA ONE', ferramenta:'ANDAIME',             patrimonio:'',        qtd:3, origem:'LOCADO', fornec:'IMPACTO', obs:''},
+  {obra:'ALPHA ONE', ferramenta:'PERFURATRIZ',         patrimonio:'PEZ-02',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'ALPHA ONE', ferramenta:'PRENSA PEX',          patrimonio:'PPE-04',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'ALPHA ONE', ferramenta:'PARAFUSADEIRA',       patrimonio:'PAR-02; PAR-05', qtd:1, origem:'EICES', fornec:'EICES', obs:''},
+  {obra:'ALPHA ONE', ferramenta:'LASER',               patrimonio:'LAS-07',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'ALPHA ONE', ferramenta:'FURADEIRA ROMPEDORA', patrimonio:'FRP-07',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'ALPHA ONE', ferramenta:'SOPRADOR',            patrimonio:'SOP-02',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'ALPHA ONE', ferramenta:'TERMOFUSOR',          patrimonio:'TER-04',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'ALPHA ONE', ferramenta:'COMPRESSOR',          patrimonio:'COM',     qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'ALPHA ONE', ferramenta:'RÁDIO',               patrimonio:'',        qtd:4, origem:'LOCADO', fornec:'OLUAP',   obs:''},
+  // ATHUR PRADO
+  {obra:'ATHUR PRADO', ferramenta:'MORSA',             patrimonio:'',        qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'ATHUR PRADO', ferramenta:'PISTOLA FINCA PINO',patrimonio:'PFP-??',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:'⚠ Patrimônio não identificado'},
+  {obra:'ATHUR PRADO', ferramenta:'RÁDIO',             patrimonio:'',        qtd:4, origem:'LOCADO', fornec:'OLUAP',   obs:''},
+  // TANABI
+  {obra:'TANABI', ferramenta:'MORSA',                  patrimonio:'',        qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'TANABI', ferramenta:'RÁDIO',                  patrimonio:'',        qtd:4, origem:'LOCADO', fornec:'STOCK TOTAL', obs:''},
+  // VIRGÍLIO
+  {obra:'VIRGÍLIO', ferramenta:'PERFURATRIZ',          patrimonio:'PEZ-07',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'VIRGÍLIO', ferramenta:'PARAFUSADEIRA',        patrimonio:'PAR-07',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'VIRGÍLIO', ferramenta:'FURADEIRA',            patrimonio:'FRP-05',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:'Código perdido'},
+  {obra:'VIRGÍLIO', ferramenta:'PRENSA PEX',           patrimonio:'EICES',   qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'VIRGÍLIO', ferramenta:'RÁDIO',                patrimonio:'',        qtd:3, origem:'LOCADO', fornec:'STOCK TOTAL', obs:''},
+  // ALTIER
+  {obra:'ALTIER', ferramenta:'PERFURATRIZ',            patrimonio:'PEZ-09',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'ALTIER', ferramenta:'FURADEIRA',              patrimonio:'FRP-09',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'ALTIER', ferramenta:'MÁQUINA TESTE ÁGUA',     patrimonio:'TES-02',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:'⚠ Duas na obra — uma quebrada para retirar'},
+  {obra:'ALTIER', ferramenta:'SERRA MÁRMORE',          patrimonio:'MSE-04',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:'Será renovado'},
+  {obra:'ALTIER', ferramenta:'MARTELETE 10KG',         patrimonio:'CMA-04',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:'Será renovado'},
+  {obra:'ALTIER', ferramenta:'PRENSA GÁS',             patrimonio:'PGA-02',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'ALTIER', ferramenta:'LASER',                  patrimonio:'LAS-08',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'ALTIER', ferramenta:'PISTOLA FINCA PINO',     patrimonio:'',        qtd:2, origem:'LOCADO', fornec:'IMPACTO', obs:''},
+  {obra:'ALTIER', ferramenta:'FURADEIRA',              patrimonio:'',        qtd:2, origem:'LOCADO', fornec:'ONIX',    obs:''},
+  {obra:'ALTIER', ferramenta:'ESMERILHADEIRA',         patrimonio:'',        qtd:2, origem:'LOCADO', fornec:'ONIX',    obs:''},
+  {obra:'ALTIER', ferramenta:'PARAFUSADEIRA',          patrimonio:'',        qtd:1, origem:'LOCADO', fornec:'ONIX',    obs:''},
+  {obra:'ALTIER', ferramenta:'SERRA MÁRMORE',          patrimonio:'',        qtd:1, origem:'LOCADO', fornec:'ONIX',    obs:''},
+  {obra:'ALTIER', ferramenta:'RÁDIO',                  patrimonio:'',        qtd:4, origem:'LOCADO', fornec:'OLUAP',   obs:''},
+  // MAURO
+  {obra:'MAURO', ferramenta:'LASER',                   patrimonio:'LAS-10',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'MAURO', ferramenta:'TRIPÉ LASER',             patrimonio:'TRI-01',  qtd:2, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'MAURO', ferramenta:'PERFURATRIZ',             patrimonio:'PEZ-10; PEZ-08', qtd:2, origem:'EICES', fornec:'EICES', obs:'⚠ Uma precisa troca do guia'},
+  {obra:'MAURO', ferramenta:'MARTELETE 10KG',          patrimonio:'CMA-02',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'MAURO', ferramenta:'PRENSA PEX',              patrimonio:'EICES',   qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'MAURO', ferramenta:'FURADEIRA',               patrimonio:'FRP-08; FRP-14', qtd:2, origem:'EICES', fornec:'EICES', obs:'FRP-14 entregue 26/03'},
+  {obra:'MAURO', ferramenta:'TERMOFUSOR',              patrimonio:'TER-02; TER-06', qtd:2, origem:'EICES', fornec:'EICES', obs:'TER-06 entregue 31/03 com matriz 110mm'},
+  {obra:'MAURO', ferramenta:'MÁQUINA DE TINTA',        patrimonio:'MAN-01',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'MAURO', ferramenta:'ESMERILHADEIRA',          patrimonio:'ESL-02',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'MAURO', ferramenta:'MARTELETE 5KG',           patrimonio:'CMA-01',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'MAURO', ferramenta:'PISTOLA FINCA PINO',      patrimonio:'PFP-12',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'MAURO', ferramenta:'SERRA MÁRMORE',           patrimonio:'MSE-08',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'MAURO', ferramenta:'PRENSA GÁS',              patrimonio:'PGA-01',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'MAURO', ferramenta:'RÁDIO',                   patrimonio:'',        qtd:6, origem:'LOCADO', fornec:'RADIO WAY', obs:''},
+  {obra:'MAURO', ferramenta:'MÁQUINA DE RANHURA',      patrimonio:'',        qtd:0.5, origem:'LOCADO', fornec:'INOVATRI', obs:'Foi para Angelica em 20/03'},
+  {obra:'MAURO', ferramenta:'MÁQUINA DE CORTE',        patrimonio:'',        qtd:1, origem:'LOCADO', fornec:'INOVATRI', obs:''},
+  {obra:'MAURO', ferramenta:'ANDAIME',                 patrimonio:'',        qtd:1, origem:'LOCADO', fornec:'IMPACTO', obs:''},
+  // ANGELICA
+  {obra:'ANGELICA', ferramenta:'PARAFUSADEIRA',        patrimonio:'',        qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'ANGELICA', ferramenta:'ESMERILHADEIRA',       patrimonio:'ESL-07',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'ANGELICA', ferramenta:'RÁDIO',                patrimonio:'',        qtd:6, origem:'LOCADO', fornec:'OLUAP',   obs:''},
+  {obra:'ANGELICA', ferramenta:'ANDAIME',              patrimonio:'',        qtd:1, origem:'LOCADO', fornec:'IMPACTO', obs:''},
+  // ARENGA (TRISUL)
+  {obra:'ARENGA (TRISUL)', ferramenta:'LASER + TRIPÉ', patrimonio:'LAS-09',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'ARENGA (TRISUL)', ferramenta:'PARAFUSADEIRA', patrimonio:'PAR-15',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'ARENGA (TRISUL)', ferramenta:'MARTELETE 5KG', patrimonio:'',        qtd:1, origem:'LOCADO', fornec:'ONIX',    obs:''},
+  {obra:'ARENGA (TRISUL)', ferramenta:'MÁQUINA DE RANHURA',patrimonio:'',    qtd:0.5, origem:'LOCADO', fornec:'INOVATRI', obs:''},
+  // PJM
+  {obra:'PJM', ferramenta:'PARAFUSADEIRA',             patrimonio:'PAR-17; PAR-21', qtd:2, origem:'EICES', fornec:'EICES', obs:'⚠ Localizar PAR-13'},
+  {obra:'PJM', ferramenta:'FURADEIRA',                 patrimonio:'FRP-11',  qtd:2, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'PJM', ferramenta:'PERFURATRIZ',               patrimonio:'PEZ-03',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'PJM', ferramenta:'LASER + TRIPÉ',             patrimonio:'LAS-06',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'PJM', ferramenta:'TERMOFUSOR',                patrimonio:'TER-05',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'PJM', ferramenta:'SOPRADOR',                  patrimonio:'SOP-01',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'PJM', ferramenta:'RÁDIO',                     patrimonio:'',        qtd:3, origem:'LOCADO', fornec:'OLUAP',   obs:''},
+  // JOA
+  {obra:'JOA', ferramenta:'PARAFUSADEIRA',             patrimonio:'',        qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'JOA', ferramenta:'FURADEIRA',                 patrimonio:'FRP-10',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'JOA', ferramenta:'PRENSA TERMINAL',           patrimonio:'',        qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  // BALTAZAR
+  {obra:'BALTAZAR', ferramenta:'FURADEIRA',            patrimonio:'FRP-06',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'BALTAZAR', ferramenta:'PARAFUSADEIRA',        patrimonio:'PAR-??',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:'⚠ Patrimônio não identificado'},
+  {obra:'BALTAZAR', ferramenta:'MARTELETE 10KG',       patrimonio:'CAM-03',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'BALTAZAR', ferramenta:'PISTOLA FINCA PINO',   patrimonio:'PFP-08',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'BALTAZAR', ferramenta:'MARTELETE 10KG',       patrimonio:'MT-03',   qtd:1, origem:'LOCADO', fornec:'ONIX',    obs:''},
+  {obra:'BALTAZAR', ferramenta:'RÁDIO',                patrimonio:'',        qtd:3, origem:'LOCADO', fornec:'HALCEPE', obs:''},
+  // SAMPA CONSOLAÇÃO
+  {obra:'SAMPA CONSOLAÇÃO', ferramenta:'SERRA MÁRMORE',patrimonio:'MSE-06',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:'⚠ Fazer Termo de Responsabilidade'},
+  {obra:'SAMPA CONSOLAÇÃO', ferramenta:'PARAFUSADEIRA',patrimonio:'PAR-20',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'SAMPA CONSOLAÇÃO', ferramenta:'FURADEIRA',    patrimonio:'FRP-12',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'SAMPA CONSOLAÇÃO', ferramenta:'TERMOFUSOR',   patrimonio:'TER-04; TER-06', qtd:2, origem:'EICES', fornec:'EICES', obs:''},
+  {obra:'SAMPA CONSOLAÇÃO', ferramenta:'PISTOLA FINCA PINO',patrimonio:'PFP-03', qtd:1, origem:'EICES', fornec:'EICES', obs:''},
+  {obra:'SAMPA CONSOLAÇÃO', ferramenta:'TESOURA CORTA FERRO',patrimonio:'TSF-01',qtd:1, origem:'EICES', fornec:'EICES', obs:''},
+  {obra:'SAMPA CONSOLAÇÃO', ferramenta:'MARTELETE 10KG',patrimonio:'MR-10',  qtd:1, origem:'LOCADO', fornec:'ONIX',    obs:''},
+  // ORIÇANGA
+  {obra:'ORIÇANGA', ferramenta:'FURADEIRA',            patrimonio:'FRP-08',  qtd:1, origem:'EICES',  fornec:'EICES',   obs:''},
+  {obra:'ORIÇANGA', ferramenta:'MARTELETE 10KG',       patrimonio:'',        qtd:1, origem:'LOCADO', fornec:'ONIX',    obs:''},
+  {obra:'ORIÇANGA', ferramenta:'LASER + TRIPÉ',        patrimonio:'',        qtd:1, origem:'LOCADO', fornec:'ONIX',    obs:''},
+  {obra:'ORIÇANGA', ferramenta:'SERRA MÁRMORE',        patrimonio:'',        qtd:1, origem:'LOCADO', fornec:'ONIX',    obs:''},
+];
+
+const INV_ICONS = {
+  'PERFURATRIZ':'⚡','PARAFUSADEIRA':'🔩','FURADEIRA':'🔵','FURADEIRA ROMPEDORA':'💥',
+  'MARTELETE 5KG':'🔨','MARTELETE 10KG':'🔨','LASER':'📡','LASER + TRIPÉ':'📡',
+  'TRIPÉ LASER':'📐','ESMERILHADEIRA':'⚙️','LIXADEIRA':'🔧','SERRA MÁRMORE':'🪚',
+  'PISTOLA FINCA PINO':'🔫','PRENSA PEX':'🗜️','PRENSA GÁS':'🗜️','TERMOFUSOR':'🌡️',
+  'SOPRADOR':'💨','COMPRESSOR':'🫧','MÁQUINA DE RANHURA':'⚙️','MÁQUINA TESTE ÁGUA':'💧',
+  'MÁQUINA DE TINTA':'🎨','MÁQUINA DE CORTE':'✂️','MORSA':'🔒','RÁDIO':'📻',
+  'ANDAIME':'🏗️','PRENSA TERMINAL':'🔌','TESOURA CORTA FERRO':'✂️',
+};
+
+function renderInventario() {
+  const busca    = (document.getElementById('inv-busca')?.value||'').toLowerCase();
+  const filtObra = document.getElementById('inv-obra')?.value || 'todas';
+  const filtOrig = document.getElementById('inv-origem')?.value || 'todos';
+
+  let lista = [...INVENTARIO].filter(i => i.qtd > 0);
+  if (filtObra !== 'todas') lista = lista.filter(i => i.obra === filtObra);
+  if (filtOrig !== 'todos') lista = lista.filter(i => i.origem === filtOrig);
+  if (busca) lista = lista.filter(i =>
+    i.ferramenta.toLowerCase().includes(busca) ||
+    i.patrimonio.toLowerCase().includes(busca) ||
+    i.obra.toLowerCase().includes(busca)
+  );
+
+  // Totais
+  const totalItens  = lista.reduce((s,i)=>s+i.qtd,0);
+  const totalEices  = lista.filter(i=>i.origem==='EICES').reduce((s,i)=>s+i.qtd,0);
+  const totalLocado = lista.filter(i=>i.origem==='LOCADO').reduce((s,i)=>s+i.qtd,0);
+  const totalPend   = lista.filter(i=>i.obs && i.obs.startsWith('⚠')).length;
+
+  document.getElementById('inv-resumo').innerHTML = `
+    <div class="inv-resumo-item"><div class="inv-resumo-val" style="color:var(--accent)">${totalItens}</div><div class="inv-resumo-lbl">Total itens</div></div>
+    <div class="inv-resumo-item"><div class="inv-resumo-val" style="color:var(--green)">${totalEices}</div><div class="inv-resumo-lbl">EICES próprio</div></div>
+    <div class="inv-resumo-item"><div class="inv-resumo-val" style="color:${totalPend>0?'var(--red)':'var(--muted)'}">${totalPend}</div><div class="inv-resumo-lbl">Pendências</div></div>`;
+
+  if (!lista.length) {
+    document.getElementById('inv-lista').innerHTML='<div class="campo-vazio"><div style="font-size:36px;margin-bottom:10px">📦</div><div>Nenhum item encontrado</div></div>';
+    return;
+  }
+
+  // Agrupa por obra
+  const porObra = {};
+  lista.forEach(i => { if(!porObra[i.obra]) porObra[i.obra]=[]; porObra[i.obra].push(i); });
+
+  document.getElementById('inv-lista').innerHTML = Object.entries(porObra).map(([obra, itens], idx) => {
+    const nEices  = itens.filter(i=>i.origem==='EICES').reduce((s,i)=>s+i.qtd,0);
+    const nLocado = itens.filter(i=>i.origem==='LOCADO').reduce((s,i)=>s+i.qtd,0);
+    const nPend   = itens.filter(i=>i.obs&&i.obs.startsWith('⚠')).length;
+
+    const itensHtml = itens.map((i, itemIdx) => `
+      <div class="inv-item">
+        <div class="inv-item-icon">${INV_ICONS[i.ferramenta]||'🔧'}</div>
+        <div class="inv-item-info">
+          <div class="inv-item-nome">${i.ferramenta}</div>
+          <div class="inv-item-det">${i.patrimonio?'📋 '+i.patrimonio+' · ':''}<span style="color:var(--muted)">${i.fornec}</span></div>
+          ${i.obs?`<div class="inv-obs">${i.obs}</div>`:''}
+        </div>
+        <div class="inv-item-right" style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <div class="inv-item-qtd">${i.qtd}</div>
+          <div class="inv-item-orig ${i.origem==='EICES'?'orig-e':'orig-l'}">${i.origem==='EICES'?'EICES':i.fornec}</div>
+          <button class="inv-edit-btn" onclick="editarItemInv(${idx},${itemIdx})">✏️ Editar</button>
+        </div>
+      </div>
+      <div class="inv-edit-form" id="inv-form-${idx}-${itemIdx}">
+        <div class="inv-edit-row">
+          <div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:4px">FERRAMENTA</div>
+            <input class="inv-edit-input" value="${i.ferramenta}" readonly style="opacity:.6">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:4px">PATRIMÔNIO</div>
+            <input class="inv-edit-input" id="inv-pat-${idx}-${itemIdx}" value="${i.patrimonio}" placeholder="Ex: PEZ-02">
+          </div>
+        </div>
+        <div class="inv-edit-row">
+          <div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:4px">QUANTIDADE</div>
+            <input class="inv-edit-input" type="number" id="inv-qtd-${idx}-${itemIdx}" value="${i.qtd}" min="0" step="0.5">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:4px">ORIGEM</div>
+            <select class="inv-edit-input" id="inv-orig-${idx}-${itemIdx}">
+              <option ${i.origem==='EICES'?'selected':''} value="EICES">EICES Próprio</option>
+              <option ${i.origem==='LOCADO'?'selected':''} value="LOCADO">Locado</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px">OBSERVAÇÃO</div>
+          <input class="inv-edit-input" id="inv-obs-${idx}-${itemIdx}" value="${i.obs||''}" placeholder="Observações...">
+        </div>
+        <div class="inv-edit-btns">
+          <button class="btn-inv-cancel" onclick="editarItemInv(${idx},${itemIdx})">Cancelar</button>
+          <button class="btn-inv-del" onclick="removerItemInv(${idx},${itemIdx})">🗑 Remover</button>
+          <button class="btn-inv-save" onclick="salvarItemInv(${idx},${itemIdx})">💾 Salvar</button>
+        </div>
+      </div>`).join('');
+
+    return `<div class="inv-obra-card">
+      <div class="inv-obra-header" onclick="toggleInvObra(${idx})">
+        <div>
+          <div class="inv-obra-nome">📍 ${obra}</div>
+          <div class="inv-obra-sub">${itens.length} tipo(s) · EICES: ${nEices} · Locado: ${nLocado}${nPend>0?` · <span style="color:var(--red)">⚠ ${nPend} pendência(s)</span>`:''}</div>
+        </div>
+        <span style="color:var(--muted);font-size:14px" id="inv-arr-${idx}">▼</span>
+      </div>
+      <div class="inv-obra-body" id="inv-body-${idx}">${itensHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleInvObra(idx) {
+  const body=document.getElementById('inv-body-'+idx);
+  const arr=document.getElementById('inv-arr-'+idx);
+  const open=body.classList.toggle('open');
+  arr.textContent=open?'▲':'▼';
+}
+// ══ FIM INVENTÁRIO ══
+
+// ══ EDIÇÃO INVENTÁRIO ═════════════════════════════════════════════
+let invEditando = null;
+
+function editarItemInv(obraIdx, itemIdx) {
+  // Fecha qualquer form aberto
+  document.querySelectorAll('.inv-edit-form.open').forEach(f => f.classList.remove('open'));
+
+  const formId = `inv-form-${obraIdx}-${itemIdx}`;
+  const form = document.getElementById(formId);
+  if (form) form.classList.toggle('open');
+}
+
+function salvarItemInv(obraIdx, itemIdx) {
+  const obras = [...new Set(INVENTARIO.map(i=>i.obra))];
+  const obra  = obras[obraIdx];
+  const itens = INVENTARIO.filter(i=>i.obra===obra);
+  const item  = itens[itemIdx];
+  if (!item) return;
+
+  // Lê valores do form
+  const qtd  = parseFloat(document.getElementById(`inv-qtd-${obraIdx}-${itemIdx}`).value) || 0;
+  const pat  = document.getElementById(`inv-pat-${obraIdx}-${itemIdx}`).value;
+  const obs  = document.getElementById(`inv-obs-${obraIdx}-${itemIdx}`).value;
+  const orig = document.getElementById(`inv-orig-${obraIdx}-${itemIdx}`).value;
+
+  // Atualiza no array
+  const idx = INVENTARIO.findIndex(i => i.obra===item.obra && i.ferramenta===item.ferramenta && i.patrimonio===item.patrimonio);
+  if (idx >= 0) {
+    INVENTARIO[idx].qtd        = qtd;
+    INVENTARIO[idx].patrimonio = pat;
+    INVENTARIO[idx].obs        = obs;
+    INVENTARIO[idx].origem     = orig;
+  }
+
+  // Salva no localStorage para persistência
+  localStorage.setItem('eices_inventario', JSON.stringify(INVENTARIO));
+
+  renderInventario();
+  toast('💾 Item atualizado!', 'ok');
+}
+
+function removerItemInv(obraIdx, itemIdx) {
+  if (!confirm('Remover este item do inventário?')) return;
+  const obras = [...new Set(INVENTARIO.map(i=>i.obra))];
+  const obra  = obras[obraIdx];
+  const itens = INVENTARIO.filter(i=>i.obra===obra);
+  const item  = itens[itemIdx];
+  if (!item) return;
+
+  const idx = INVENTARIO.findIndex(i => i.obra===item.obra && i.ferramenta===item.ferramenta && i.patrimonio===item.patrimonio);
+  if (idx >= 0) INVENTARIO.splice(idx, 1);
+
+  localStorage.setItem('eices_inventario', JSON.stringify(INVENTARIO));
+  renderInventario();
+  toast('🗑 Item removido', '');
+}
+
+// Carrega inventário customizado do localStorage se existir
+function carregarInventarioLocal() {
+  const salvo = localStorage.getItem('eices_inventario');
+  if (salvo) {
+    try {
+      const dados = JSON.parse(salvo);
+      INVENTARIO.length = 0;
+      dados.forEach(d => INVENTARIO.push(d));
+    } catch(e) {}
+  }
+}
+
+// ══ TRANSFERÊNCIA ══════════════════════════════════════════════════
+let solTransfAtiva = null;
+
+function abrirTransferencia(proto) {
+  solTransfAtiva = registros.find(r => r.protocolo === proto);
+  if (!solTransfAtiva) return;
+
+  const ferrs = (solTransfAtiva.ferramentas || []).map(f => `${f.nome} ×${f.qtd}`).join(', ');
+  document.getElementById('modal-transf-info').innerHTML = `
+    <div style="margin-bottom:8px">
+      <strong>De:</strong> ${solTransfAtiva.resposta?.origem || solTransfAtiva.obra || '—'}
+      &nbsp;→&nbsp;
+      <strong>Para:</strong> ${solTransfAtiva.obra}
+    </div>
+    <div style="color:var(--muted)"><strong>Supervisor:</strong> ${solTransfAtiva.supervisor}</div>
+    <div style="color:var(--muted);margin-top:4px"><strong>Ferramentas:</strong> ${ferrs}</div>`;
+
+  document.getElementById('modal-transf-obs').value = '';
+  document.getElementById('ov-transferencia').classList.add('show');
+}
+
+async function confirmarTransferencia() {
+  if (!solTransfAtiva) return;
+
+  const obs = document.getElementById('modal-transf-obs').value;
+  const origem = solTransfAtiva.resposta?.origem || '';
+  const destino = solTransfAtiva.obra;
+
+  // Atualiza inventário: move ferramentas da origem para o destino
+  (solTransfAtiva.ferramentas || []).forEach(f => {
+    // Remove da origem
+    const idxOrig = INVENTARIO.findIndex(i =>
+      i.obra.toUpperCase() === origem.toUpperCase() &&
+      i.ferramenta.toUpperCase().includes(f.nome.toUpperCase().split(' ')[0])
+    );
+    if (idxOrig >= 0) {
+      if (INVENTARIO[idxOrig].qtd <= f.qtd) {
+        INVENTARIO.splice(idxOrig, 1);
+      } else {
+        INVENTARIO[idxOrig].qtd -= f.qtd;
+      }
+    }
+
+    // Adiciona no destino
+    const idxDest = INVENTARIO.findIndex(i =>
+      i.obra === destino &&
+      i.ferramenta.toUpperCase().includes(f.nome.toUpperCase().split(' ')[0]) &&
+      i.origem === (f.origem || 'EICES')
+    );
+    if (idxDest >= 0) {
+      INVENTARIO[idxDest].qtd += f.qtd;
+    } else {
+      INVENTARIO.push({
+        obra: destino,
+        ferramenta: f.nome,
+        patrimonio: f.patrimonio || '',
+        qtd: f.qtd,
+        origem: f.origem || 'EICES',
+        fornec: 'EICES',
+        obs: obs || ''
+      });
+    }
+  });
+
+  // Salva inventário atualizado
+  localStorage.setItem('eices_inventario', JSON.stringify(INVENTARIO));
+
+  // Atualiza status da solicitação
+  const resposta = {
+    obs: obs || 'Transferência confirmada',
+    data_resposta: new Date().toISOString(),
+    visto_supervisor: false
+  };
+  await sincronizarStatus(solTransfAtiva.protocolo, 'Aprovado', resposta, solTransfAtiva.ferramentas);
+
+  fecharModal('ov-transferencia');
+  renderTudo();
+  toast('✅ Transferência confirmada — inventário atualizado!', 'ok');
+}
+
+// Inicializa inventário com dados locais se houver
+carregarInventarioLocal();
+// ══ FIM TRANSFERÊNCIA ══
+
+
+
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)fecharModal(o.id);}));
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#0A1628">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="EICES">
+<title>EICES — Portal do Supervisor</title>
+<style>
+:root{
+  --bg:#0A1628;--surface:#111E35;--card:#1A2B47;--border:#243550;
+  --accent:#00C2FF;--accent2:#0077FF;--green:#00D68F;--yellow:#FFB800;
+  --red:#FF4D6A;--orange:#FF8C00;--text:#E8F0FF;--muted:#6B82A8;
+  --font:'Segoe UI',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100dvh;padding-bottom:80px;}
+
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;position:sticky;top:0;z-index:100;}
+.header-top{display:flex;align-items:center;justify-content:space-between;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent2),var(--accent));display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.logo-text{font-size:16px;font-weight:700;}
+.logo-sub{font-size:11px;color:var(--muted);}
+.header-btns{display:flex;gap:6px;align-items:center;}
+.btn-sm{background:var(--card);border:1.5px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;font-weight:700;padding:7px 10px;cursor:pointer;}
+.btn-sm.accent{border-color:var(--accent);color:var(--accent);}
+
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:61px;z-index:99;overflow-x:auto;}
+.tab{flex:1;min-width:70px;padding:11px 6px;font-size:11px;font-weight:600;color:var(--muted);text-align:center;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;}
+.tab.active{color:var(--accent);border-color:var(--accent);}
+.tab .dot{width:7px;height:7px;background:var(--red);border-radius:50%;display:inline-block;margin-left:4px;vertical-align:middle;display:none;}
+.tab .dot.show{display:inline-block;}
+
+.screen{display:none;padding:14px;}
+.screen.active{display:block;}
+
+/* LOGIN */
+.login-wrap{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
+.login-logo{width:72px;height:72px;border-radius:20px;background:linear-gradient(135deg,var(--accent2),var(--accent));display:flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:16px;}
+.login-title{font-size:24px;font-weight:800;margin-bottom:4px;}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:28px;text-align:center;}
+.login-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;width:100%;max-width:360px;}
+.login-err{background:rgba(255,77,106,.1);border:1px solid rgba(255,77,106,.3);color:var(--red);border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:14px;display:none;}
+.remember-row{display:flex;align-items:center;gap:8px;margin:12px 0;font-size:13px;color:var(--muted);}
+.remember-row input{width:18px;height:18px;accent-color:var(--accent);cursor:pointer;}
+
+/* CARDS & FIELDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;}
+.card-title{font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
+.field{margin-bottom:12px;}
+.field:last-child{margin-bottom:0;}
+label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;}
+select,input,textarea{width:100%;padding:11px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--font);transition:border-color .2s;-webkit-appearance:none;}
+select:focus,input:focus,textarea:focus{outline:none;border-color:var(--accent);}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B82A8' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;}
+textarea{resize:none;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* STATUS CONEXÃO */
+.conn-bar{display:flex;align-items:center;gap:6px;padding:6px 14px;background:var(--surface);border-bottom:1px solid var(--border);font-size:11px;}
+.conn-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.conn-dot.ok{background:var(--green);}
+.conn-dot.err{background:var(--red);}
+.conn-dot.checking{background:var(--yellow);animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* FERRAMENTA GRID */
+.search-wrap{position:relative;margin-bottom:10px;}
+.search-wrap input{padding-left:36px;}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;}
+.ferr-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:300px;overflow-y:auto;}
+.ferr-item{background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:10px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px;}
+.ferr-item.selected{background:rgba(0,194,255,.1);border-color:var(--accent);}
+.ferr-icon{font-size:18px;flex-shrink:0;}
+.ferr-info{flex:1;min-width:0;}
+.ferr-nome{font-size:12px;font-weight:600;line-height:1.3;}
+.ferr-val{font-size:11px;color:var(--muted);}
+.ferr-check{width:18px;height:18px;border-radius:50%;background:var(--accent);color:#000;font-size:10px;display:none;align-items:center;justify-content:center;flex-shrink:0;}
+.ferr-item.selected .ferr-check{display:flex;}
+
+/* CART BAR */
+.cart-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:12px 16px;display:flex;gap:10px;align-items:center;z-index:200;}
+.cart-count{background:var(--accent);color:#000;width:28px;height:28px;border-radius:50%;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.cart-label{font-size:13px;color:var(--muted);flex:1;}
+.btn-cart{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#000;border:none;border-radius:10px;padding:10px 18px;font-size:14px;font-weight:700;cursor:pointer;}
+
+/* ITEM LISTA */
+.item-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.item-icon{font-size:20px;}
+.item-info{flex:1;}
+.item-nome{font-size:13px;font-weight:600;}
+.item-detalhe{font-size:11px;color:var(--muted);}
+.qtd-ctrl{display:flex;align-items:center;gap:6px;}
+.qtd-btn{width:26px;height:26px;border-radius:7px;background:var(--card);border:1px solid var(--border);color:var(--text);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.qtd-num{font-size:14px;font-weight:700;min-width:20px;text-align:center;}
+
+/* BTNS */
+.btn-primary{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--accent2),var(--accent));color:#000;font-size:15px;font-weight:700;cursor:pointer;}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+.btn-secondary{width:100%;padding:12px;border:1.5px solid var(--border);border-radius:12px;background:transparent;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;margin-bottom:10px;}
+
+/* STEPS */
+.steps{display:flex;align-items:center;margin-bottom:16px;}
+.step{display:flex;align-items:center;gap:5px;flex:1;font-size:10px;font-weight:700;color:var(--muted);}
+.step.active{color:var(--accent);}
+.step.done{color:var(--green);}
+.step-num{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
+.step.active .step-num{border-color:var(--accent);color:var(--accent);}
+.step.done .step-num{border-color:var(--green);background:var(--green);color:#000;}
+.step-line{flex:1;height:1px;background:var(--border);margin:0 3px;}
+
+/* BADGES */
+.badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.badge.pendente{background:rgba(255,184,0,.15);color:var(--yellow);border:1px solid rgba(255,184,0,.3);}
+.badge.aprovado{background:rgba(0,214,143,.15);color:var(--green);border:1px solid rgba(0,214,143,.3);}
+.badge.parcial{background:rgba(255,140,0,.15);color:var(--orange);border:1px solid rgba(255,140,0,.3);}
+.badge.rejeitado{background:rgba(255,77,106,.15);color:var(--red);border:1px solid rgba(255,77,106,.3);}
+
+/* HIST CARD */
+.hist-card{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;}
+.hist-header{padding:12px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+.hist-obra{font-size:14px;font-weight:700;}
+.hist-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+.hist-body{padding:0 14px 12px;}
+.hist-ferrs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+.ferr-tag{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;}
+.ferr-tag span{color:var(--muted);}
+.ferr-tag.aprovado{border-color:rgba(0,214,143,.4);color:var(--green);}
+.ferr-tag.rejeitado{border-color:rgba(255,77,106,.4);color:var(--red);}
+.hist-resposta{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:12px;color:var(--muted);}
+.hist-resposta strong{color:var(--text);display:block;margin-bottom:4px;}
+
+/* SUCESSO */
+.success-screen{text-align:center;padding:40px 16px;}
+.success-icon{width:80px;height:80px;border-radius:50%;background:rgba(0,214,143,.15);border:2px solid var(--green);font-size:36px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;}
+.success-title{font-size:22px;font-weight:700;margin-bottom:8px;}
+.success-sub{font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:20px;}
+.protocolo{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:20px;}
+.protocolo span{display:block;font-size:22px;font-weight:700;color:var(--accent);margin-top:4px;}
+.proto-label{font-size:12px;color:var(--muted);}
+
+/* MAN */
+.man-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.man-type-btn{padding:12px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);font-size:12px;font-weight:700;cursor:pointer;text-align:center;color:var(--muted);}
+.man-type-btn.active{background:rgba(255,140,0,.1);border-color:var(--orange);color:var(--orange);}
+.urg-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.urg-btn{padding:10px 4px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);font-size:11px;font-weight:700;cursor:pointer;text-align:center;color:var(--muted);}
+.urg-btn.ub{border-color:var(--green);color:var(--green);background:rgba(0,214,143,.1);}
+.urg-btn.um{border-color:var(--yellow);color:var(--yellow);background:rgba(255,184,0,.1);}
+.urg-btn.ua{border-color:var(--red);color:var(--red);background:rgba(255,77,106,.1);}
+
+/* SENDING OVERLAY */
+.sending-overlay{position:fixed;inset:0;background:rgba(10,22,40,.85);z-index:999;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+.sending-overlay.show{display:flex;}
+.sending-spinner{width:50px;height:50px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sending-txt{font-size:15px;font-weight:600;color:var(--text);}
+
+/* EMPTY */
+.empty{text-align:center;padding:40px 16px;color:var(--muted);}
+.empty-icon{font-size:36px;margin-bottom:10px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card);border:1px solid var(--border);color:var(--text);padding:12px 20px;border-radius:30px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:1000;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.ok{border-color:var(--green);color:var(--green);}
+.toast.err{border-color:var(--red);color:var(--red);}
+
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="page-login">
+  <div class="login-wrap">
+    <div class="login-logo">⚡</div>
+    <div class="login-title">EICES</div>
+    <div class="login-sub">Portal do Supervisor<br><span style="font-size:11px">Use seu e-mail @eices.com.br</span></div>
+    <div class="login-card">
+      <div class="login-err" id="login-err">E-mail ou senha incorretos.</div>
+      <div class="field">
+        <label>E-mail</label>
+        <input type="email" id="login-email" placeholder="nome@eices.com.br" autocomplete="email">
+      </div>
+      <div class="field">
+        <label>Senha</label>
+        <input type="password" id="login-senha" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <div class="remember-row">
+        <input type="checkbox" id="lembrar" checked>
+        <label for="lembrar" style="text-transform:none;letter-spacing:0;font-size:13px;color:var(--muted);cursor:pointer">Manter conectado</label>
+      </div>
+      <button class="btn-primary" onclick="fazerLogin()">Entrar</button>
+
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="page-app" style="display:none">
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-text">EICES</div>
+        <div class="logo-sub" id="header-info">Supervisor</div>
+      </div>
+    </div>
+    <div class="header-btns">
+      
+      <button class="btn-sm" onclick="fazerLogout()">Sair</button>
+    </div>
+  </div>
+</div>
+
+<!-- BARRA DE CONEXÃO -->
+<div class="conn-bar" id="conn-bar">
+  <div class="conn-dot checking" id="conn-dot"></div>
+  <span id="conn-txt">Verificando conexão...</span>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="mudarTab('nova',this)">📤 Solicitar</div>
+  <div class="tab" onclick="mudarTab('manutencao',this)">🔧 Manutenção</div>
+  <div class="tab" onclick="mudarTab('historico',this)">📋 Histórico <span class="dot" id="notif-dot"></span></div>
+</div>
+
+<!-- TAB SOLICITAR -->
+<div class="screen active" id="tab-nova">
+
+  <div id="step-ident">
+    <div class="steps">
+      <div class="step active"><div class="step-num">1</div>Dados</div>
+      <div class="step-line"></div>
+      <div class="step"><div class="step-num">2</div>Ferramentas</div>
+      <div class="step-line"></div>
+      <div class="step"><div class="step-num">3</div>Revisar</div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 Dados da Solicitação</div>
+      <div class="field">
+        <label>Obra</label>
+        <select id="sel-obra"><option value="">Selecione...</option></select>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Necessidade até</label>
+          <input type="date" id="data-nec">
+        </div>
+        <div class="field">
+          <label>Urgência</label>
+          <select id="sel-urg">
+            <option value="Normal">Normal</option>
+            <option value="Urgente">Urgente</option>
+            <option value="Crítico">🚨 Crítico</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="irStep2()">Escolher Ferramentas →</button>
+  </div>
+
+  <div id="step-ferr" style="display:none">
+    <div class="steps">
+      <div class="step done"><div class="step-num">✓</div>Dados</div>
+      <div class="step-line"></div>
+      <div class="step active"><div class="step-num">2</div>Ferramentas</div>
+      <div class="step-line"></div>
+      <div class="step"><div class="step-num">3</div>Revisar</div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔧 Selecione as ferramentas</div>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="busca-ferr" placeholder="Buscar..." oninput="filtrarFerr(this.value)">
+      </div>
+      <div class="ferr-grid" id="ferr-grid"></div>
+    </div>
+    <div class="cart-bar">
+      <div class="cart-count" id="cart-n">0</div>
+      <div class="cart-label" id="cart-txt">Nenhuma selecionada</div>
+      <button class="btn-cart" onclick="irStep3()">Revisar →</button>
+    </div>
+  </div>
+
+  <div id="step-rev" style="display:none">
+    <div class="steps">
+      <div class="step done"><div class="step-num">✓</div>Dados</div>
+      <div class="step-line"></div>
+      <div class="step done"><div class="step-num">✓</div>Ferramentas</div>
+      <div class="step-line"></div>
+      <div class="step active"><div class="step-num">3</div>Revisar</div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 Revisão</div>
+      <div id="rev-info" style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);font-size:13px;"></div>
+      <div id="rev-lista"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">💬 Observações</div>
+      <textarea id="obs-sol" rows="3" placeholder="Detalhes adicionais..."></textarea>
+    </div>
+    <button class="btn-secondary" onclick="showStep('step-ferr');renderFerr()">← Editar</button>
+    <button class="btn-primary" id="btn-enviar" onclick="enviarSolicitacao()">✅ Enviar Solicitação</button>
+  </div>
+
+  <div id="step-ok" style="display:none">
+    <div class="success-screen">
+      <div class="success-icon">✅</div>
+      <div class="success-title">Solicitação Enviada!</div>
+      <div class="success-sub">Sua solicitação foi registrada com sucesso no sistema e o responsável foi notificado.</div>
+      <div class="protocolo"><div class="proto-label">Protocolo</div><span id="proto-num">—</span></div>
+      <button class="btn-primary" onclick="novaSol()">Nova Solicitação</button>
+      <div style="margin-top:10px"></div>
+      <button class="btn-secondary" onclick="mudarTab('historico',document.querySelectorAll('.tab')[2])">Ver no Histórico →</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- TAB MANUTENÇÃO -->
+<div class="screen" id="tab-manutencao">
+  <div class="card">
+    <div class="card-title">🔧 Tipo de Manutenção</div>
+    <div class="man-type-grid">
+      <div class="man-type-btn" onclick="setManTipo('ferramenta',this)">🔩 Ferramenta<br><span style="font-size:10px;font-weight:400;color:var(--muted)">Por patrimônio</span></div>
+      <div class="man-type-btn" onclick="setManTipo('obra',this)">🏗️ Equipamento<br><span style="font-size:10px;font-weight:400;color:var(--muted)">Na obra</span></div>
+    </div>
+  </div>
+  <div class="card" id="man-ferr-card" style="display:none">
+    <div class="card-title">🔩 Ferramenta</div>
+    <div class="row2">
+      <div class="field"><label>Patrimônio</label><input type="text" id="man-pat" placeholder="Ex: PEZ-02" oninput="this.value=this.value.toUpperCase()"></div>
+      <div class="field"><label>Ferramenta</label>
+        <select id="man-ferr-sel">
+          <option value="">Selecione...</option>
+          <option>Perfuratriz</option><option>Parafusadeira</option><option>Furadeira</option>
+          <option>Furadeira Rompedora</option><option>Martelete 5KG</option><option>Martelete 10KG</option>
+          <option>Laser</option><option>Esmerilhadeira</option><option>Lixadeira</option>
+          <option>Pistola Finca Pino</option><option>Prensa PEX</option><option>Prensa Gás</option>
+          <option>Termofusor</option><option>Soprador</option><option>Serra Mármore</option><option>Outro</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="card" id="man-obra-card" style="display:none">
+    <div class="card-title">🏗️ Equipamento na Obra</div>
+    <div class="field"><label>Descrição</label><input type="text" id="man-equip" placeholder="Descreva o equipamento..."></div>
+    <div class="field"><label>Obra</label><select id="man-obra-sel"><option value="">Selecione...</option></select></div>
+  </div>
+  <div class="card" id="man-det-card" style="display:none">
+    <div class="card-title">📝 Detalhes</div>
+    <div class="field"><label>Urgência</label>
+      <div class="urg-grid">
+        <div class="urg-btn" onclick="setUrgMan('Baixa',this)">🟢 Baixa</div>
+        <div class="urg-btn" onclick="setUrgMan('Média',this)">🟡 Média</div>
+        <div class="urg-btn" onclick="setUrgMan('Alta',this)">🔴 Alta</div>
+      </div>
+    </div>
+    <div class="field"><label>Descrição do problema</label><textarea id="man-desc" rows="3" placeholder="Descreva o defeito..."></textarea></div>
+    <div class="field"><label>A ferramenta está em uso?</label>
+      <select id="man-uso"><option value="Sim">Sim — ainda em uso</option><option value="Não">Não — parada</option></select>
+    </div>
+    <button class="btn-primary" onclick="enviarManutencao()" style="margin-top:4px">📤 Enviar Manutenção</button>
+  </div>
+</div>
+
+<!-- TAB HISTÓRICO -->
+<div class="screen" id="tab-historico">
+  <div style="display:flex;gap:8px;margin-bottom:12px;">
+    <select id="h-tipo" onchange="renderHistorico()" style="flex:1;padding:9px 12px;background:var(--card);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:var(--font);-webkit-appearance:none;">
+      <option value="todos">Todos</option><option value="Solicitação">Solicitações</option><option value="Manutenção">Manutenções</option>
+    </select>
+    <select id="h-status" onchange="renderHistorico()" style="flex:1;padding:9px 12px;background:var(--card);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:var(--font);-webkit-appearance:none;">
+      <option value="todos">Todos status</option><option value="Pendente">Pendente</option>
+      <option value="Aprovado">Aprovado</option><option value="Parcial">Parcial</option><option value="Rejeitado">Rejeitado</option>
+    </select>
+  </div>
+  <div id="lista-historico"></div>
+</div>
+
+</div><!-- /page-app -->
+
+<!-- SENDING OVERLAY -->
+<div class="sending-overlay" id="sending-overlay">
+  <div class="sending-spinner"></div>
+  <div class="sending-txt" id="sending-txt">Enviando solicitação...</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══ CONFIGURAÇÃO ═════════════════════════════════════════════════
+let BACKEND_URL = 'https://script.google.com/macros/s/AKfycbzi3rXXap4Ariyam8VkwVSaN6FicwGUUQ-VaaYFIEnwVeL-Vr6IkFBX6e3Xf_HwdJ9dvQ/exec'; // URL configurada — não alterar
+
+const USUARIOS = {
+  'george@eices.com.br':          {senha:'george123', nome:'Jose George Alves Ordonho',              cargo:'Engenheiro de Obras'},
+  'joandson@eices.com.br':        {senha:'joands123', nome:'Joandson Valença Moreira',               cargo:'Engenheiro de Obras'},
+  'laercio@eices.com.br':         {senha:'laerci123', nome:'Laercio Alves da Silva',                 cargo:'Engenheiro de Obras'},
+  'leonardo.bonomi@eices.com.br': {senha:'leonar123', nome:'Leonardo Bonomi',                        cargo:'Engenheiro de Obras'},
+  'mayara@eices.com.br':          {senha:'mayara123', nome:'Mayara Estevam',                         cargo:'Engenheiro de Obras'},
+  'paulo@eices.com.br':           {senha:'paulo123',  nome:'Paulo Victor de Andrade Faustino',       cargo:'Engenheiro de Obras'},
+  'phelipe@eices.com.br':         {senha:'phelip123', nome:'Phelipe Souza',                          cargo:'Engenheiro de Obras'},
+  'tayane@eices.com.br':          {senha:'tayane123', nome:'Tayane Carvalho Silva',                  cargo:'Engenheiro de Obras'},
+  'tiago.oliveira@eices.com.br':  {senha:'tiago123',  nome:'Tiago de Oliveira Marques',              cargo:'Engenheiro de Obras'},
+  'gabriel@eices.com.br':         {senha:'gabrie123', nome:'Gabriel Alves Correa',                   cargo:'Assistente de Engenharia'},
+  'guilherme@eices.com.br':       {senha:'guilhe123', nome:'Guilherme E. S. Nascimento',             cargo:'Assistente de Engenharia'},
+  'marianne@eices.com.br':        {senha:'marian123', nome:'Marianne Santos Vieira',                 cargo:'Assistente de Engenharia'},
+  'vitoria@eices.com.br':         {senha:'vitori123', nome:'Vitoria Vieira da Silva',                cargo:'Assistente de Engenharia'},
+  'welbert@eices.com.br':         {senha:'welber123', nome:'Welbert Alves dos Santos',               cargo:'Assistente de Engenharia'},
+  'anderson@eices.com.br':        {senha:'anders123', nome:'Anderson Souza Villar',                  cargo:'Estagiário'},
+  'lucas@eices.com.br':           {senha:'lucas123',  nome:'Lucas de Alencar Oliveira',              cargo:'Estagiário'},
+  'luizhenrique@eices.com.br':    {senha:'luiz123',   nome:'Luiz Henrique Daniel Almeida',           cargo:'Analista de Sistema'},
+  'rodrigo@eices.com.br':         {senha:'rodrig123', nome:'Rodrigo Oliveira',                       cargo:'Técnico de Segurança'},
+  'admin@eices.com.br':           {senha:'admin2025', nome:'Administrador EICES',                    cargo:'Administrador'},
+  'laerte@eices.com.br':         {senha:'laert123',  nome:'Laerte Alves',                          cargo:'Diretor',               perfil:'controle'},
+};
+
+const OBRAS_LISTA = ['ALPHA ONE','ATHUR PRADO','TANABI','VIRGÍLIO','ALTIER','MAURO','ANGELICA','ARENGA (TRISUL)','PJM','BIOMA','BALTAZAR','SAMPA CONSOLAÇÃO','ORIÇANGA','JOA','CUNHA GAGO'];
+
+const FERRAMENTAS = [
+  {nome:'Perfuratriz',icon:'⚡',val:300},{nome:'Parafusadeira',icon:'🔩',val:200},
+  {nome:'Furadeira',icon:'🔵',val:200},{nome:'Furadeira Rompedora',icon:'💥',val:200},
+  {nome:'Martelete 5KG',icon:'🔨',val:350},{nome:'Martelete 10KG',icon:'🔨',val:400},
+  {nome:'Laser',icon:'📡',val:200},{nome:'Tripé Laser',icon:'📐',val:40},
+  {nome:'Esmerilhadeira',icon:'⚙️',val:200},{nome:'Lixadeira',icon:'🔧',val:200},
+  {nome:'Serra Mármore',icon:'🪚',val:200},{nome:'Pistola Finca Pino',icon:'🔫',val:300},
+  {nome:'Prensa PEX',icon:'🗜️',val:200},{nome:'Prensa Gás',icon:'🗜️',val:100},
+  {nome:'Termofusor',icon:'🌡️',val:200},{nome:'Soprador',icon:'💨',val:200},
+  {nome:'Compressor',icon:'🫧',val:200},{nome:'Máquina de Ranhura',icon:'⚙️',val:1600},
+  {nome:'Máquina Teste Água',icon:'💧',val:300},{nome:'Rádio',icon:'📻',val:65},
+  {nome:'Andaime',icon:'🏗️',val:480},{nome:'Prensa Terminal',icon:'🔌',val:100},
+];
+
+// ══ STATE ══
+let userLogado = null;
+let selecionados = {};
+let ferrFiltradas = [...FERRAMENTAS];
+let manTipo = '', urgMan = '';
+let registrosCache = [];
+let connOk = false;
+
+// ══ CONEXÃO ══
+function configurarURL() {
+  const url = prompt('Cole aqui a URL do Apps Script (Web App):\n\nFormato: https://script.google.com/macros/s/.../exec', BACKEND_URL);
+  if (url && url.startsWith('https://')) {
+    BACKEND_URL = url.trim();
+    localStorage.setItem('eices_backend_url', BACKEND_URL);
+    verificarConexao();
+  }
+}
+
+async function verificarConexao() {
+  const dot = document.getElementById('conn-dot');
+  const txt = document.getElementById('conn-txt');
+  if (!BACKEND_URL) {
+    dot.className='conn-dot err'; txt.textContent='Servidor não configurado — toque em ⚙️'; connOk=false; return;
+  }
+  dot.className='conn-dot checking'; txt.textContent='Verificando conexão...';
+  try {
+    const r = await fetch(BACKEND_URL+'?acao=ping', {signal: AbortSignal.timeout(8000)});
+    const d = await r.json();
+    if (d.status==='ok') {
+      dot.className='conn-dot ok'; txt.textContent='Conectado ao servidor ✓'; connOk=true;
+      carregarDoBackend();
+    } else throw new Error();
+  } catch(e) {
+    dot.className='conn-dot err'; txt.textContent='Sem conexão com servidor — dados locais'; connOk=false;
+  }
+}
+
+// ══ LOGIN ══
+function fazerLogin() {
+  const email = document.getElementById('login-email').value.trim().toLowerCase();
+  const senha = document.getElementById('login-senha').value;
+  const lembrar = document.getElementById('lembrar').checked;
+  const err = document.getElementById('login-err');
+
+  if (!email.endsWith('@eices.com.br')) {
+    err.textContent='Use seu e-mail @eices.com.br'; err.style.display='block'; return;
+  }
+  const u = USUARIOS[email];
+  if (!u || u.senha !== senha) {
+    err.textContent='E-mail ou senha incorretos.'; err.style.display='block'; return;
+  }
+  err.style.display='none';
+  userLogado = {email, ...u};
+
+  // Manter conectado
+  if (lembrar) {
+    localStorage.setItem('eices_session', JSON.stringify(userLogado));
+  } else {
+    sessionStorage.setItem('eices_session', JSON.stringify(userLogado));
+    localStorage.removeItem('eices_session');
+  }
+  iniciarApp();
+}
+
+function verificarSessao() {
+  const s = localStorage.getItem('eices_session') || sessionStorage.getItem('eices_session');
+  if (s) { userLogado = JSON.parse(s); iniciarApp(); }
+}
+
+function fazerLogout() {
+  localStorage.removeItem('eices_session');
+  sessionStorage.removeItem('eices_session');
+  userLogado = null;
+  document.getElementById('page-login').style.display='';
+  document.getElementById('page-app').style.display='none';
+}
+
+function iniciarApp() {
+  document.getElementById('page-login').style.display='none';
+  document.getElementById('page-app').style.display='block';
+  document.getElementById('header-info').textContent = userLogado.nome.split(' ')[0] + ' · ' + userLogado.cargo;
+  const opts = OBRAS_LISTA.map(o=>`<option value="${o}">${o}</option>`).join('');
+  document.getElementById('sel-obra').innerHTML='<option value="">Selecione...</option>'+opts;
+  document.getElementById('man-obra-sel').innerHTML='<option value="">Selecione...</option>'+opts;
+  renderFerr();
+  verificarConexao();
+  setInterval(()=>{ if(connOk) carregarDoBackend(); }, 30000);
+}
+
+// ══ BACKEND ══
+async function enviarParaBackend(dados) {
+  if (!BACKEND_URL) return false;
+  try {
+    const r = await fetch(BACKEND_URL, {
+      method:'POST',
+      body: JSON.stringify({acao: dados.tipo==='Manutenção'?'nova_manutencao':'nova_solicitacao', dados}),
+      signal: AbortSignal.timeout(15000)
+    });
+    const d = await r.json();
+    return d.status === 'ok';
+  } catch(e) { return false; }
+}
+
+async function carregarDoBackend() {
+  if (!BACKEND_URL || !userLogado) return;
+  try {
+    const r = await fetch(BACKEND_URL+'?acao=listar&email='+encodeURIComponent(userLogado.email), {signal: AbortSignal.timeout(10000)});
+    const dados = await r.json();
+    if (Array.isArray(dados)) {
+      registrosCache = dados;
+      localStorage.setItem('eices_cache_'+userLogado.email, JSON.stringify(dados));
+      verificarRespostasNovas();
+      if (document.getElementById('tab-historico').classList.contains('active')) renderHistorico();
+    }
+  } catch(e) { /* usa cache */ }
+}
+
+function getRegistros() {
+  if (registrosCache.length) return registrosCache;
+  const cache = localStorage.getItem('eices_cache_'+(userLogado?.email||''));
+  return cache ? JSON.parse(cache) : [];
+}
+
+// ══ ENVIO SOLICITAÇÃO ══
+async function enviarSolicitacao() {
+  const btn = document.getElementById('btn-enviar');
+  btn.disabled = true;
+
+  const proto = 'SOL-'+Date.now().toString().slice(-6);
+  const dados = {
+    protocolo: proto, tipo:'Solicitação',
+    supervisor: userLogado.nome, email: userLogado.email,
+    obra: document.getElementById('sel-obra').value,
+    urgencia: document.getElementById('sel-urg').value,
+    data_necessidade: document.getElementById('data-nec').value,
+    observacao: document.getElementById('obs-sol').value,
+    ferramentas: Object.values(selecionados).map(({ferramenta,qtd})=>({nome:ferramenta.nome,qtd,valor:ferramenta.val,status:'Pendente'})),
+    data_solicitacao: new Date().toISOString(),
+    status:'Pendente', resposta:null
+  };
+
+  mostrarEnviando('Enviando solicitação...');
+
+  const ok = await enviarParaBackend(dados);
+
+  esconderEnviando();
+  btn.disabled = false;
+
+  if (ok) {
+    document.getElementById('proto-num').textContent = proto;
+    showStep('step-ok');
+    carregarDoBackend();
+    toast('✅ Solicitação registrada no servidor!','ok');
+  } else {
+    // Salva local como fallback
+    const cache = getRegistros();
+    cache.unshift(dados);
+    localStorage.setItem('eices_cache_'+userLogado.email, JSON.stringify(cache));
+    registrosCache = cache;
+    document.getElementById('proto-num').textContent = proto;
+    showStep('step-ok');
+    toast('⚠️ Salvo localmente — configure o servidor','');
+  }
+}
+
+// ══ MANUTENÇÃO ══
+function setManTipo(tipo, btn) {
+  manTipo=tipo;
+  document.querySelectorAll('.man-type-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('man-ferr-card').style.display=tipo==='ferramenta'?'block':'none';
+  document.getElementById('man-obra-card').style.display=tipo==='obra'?'block':'none';
+  document.getElementById('man-det-card').style.display='block';
+}
+
+function setUrgMan(u, btn) {
+  urgMan=u;
+  document.querySelectorAll('.urg-btn').forEach(b=>b.classList.remove('ub','um','ua'));
+  btn.classList.add(u==='Baixa'?'ub':u==='Média'?'um':'ua');
+}
+
+async function enviarManutencao() {
+  if (!manTipo) { toast('Selecione o tipo','err'); return; }
+  if (!urgMan)  { toast('Selecione a urgência','err'); return; }
+  const desc = document.getElementById('man-desc').value.trim();
+  if (!desc) { toast('Descreva o problema','err'); return; }
+
+  const proto = 'MAN-'+Date.now().toString().slice(-6);
+  const dados = {
+    protocolo:proto, tipo:'Manutenção', subtipo:manTipo,
+    supervisor:userLogado.nome, email:userLogado.email,
+    patrimonio: manTipo==='ferramenta'?document.getElementById('man-pat').value:'',
+    ferramenta: manTipo==='ferramenta'?document.getElementById('man-ferr-sel').value:'',
+    equipamento: manTipo==='obra'?document.getElementById('man-equip').value:'',
+    obra: manTipo==='obra'?document.getElementById('man-obra-sel').value:userLogado.obra||'',
+    urgencia:urgMan, descricao:desc,
+    em_uso:document.getElementById('man-uso').value,
+    data_solicitacao:new Date().toISOString(),
+    status:'Pendente', resposta:null
+  };
+
+  mostrarEnviando('Enviando manutenção...');
+  const ok = await enviarParaBackend(dados);
+  esconderEnviando();
+
+  if (ok) toast('✅ Manutenção registrada no servidor!','ok');
+  else toast('⚠️ Salvo localmente','');
+
+  // Limpa form
+  ['man-pat','man-ferr-sel','man-equip','man-desc'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.querySelectorAll('.man-type-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.urg-btn').forEach(b=>b.classList.remove('ub','um','ua'));
+  ['man-ferr-card','man-obra-card','man-det-card'].forEach(id=>document.getElementById(id).style.display='none');
+  manTipo=''; urgMan='';
+  mudarTab('historico',document.querySelectorAll('.tab')[2]);
+  carregarDoBackend();
+}
+
+// ══ HISTÓRICO ══
+function renderHistorico() {
+  const el = document.getElementById('lista-historico');
+  let lista = getRegistros();
+  const ft=document.getElementById('h-tipo').value;
+  const fs=document.getElementById('h-status').value;
+  if (ft!=='todos') lista=lista.filter(r=>r.tipo===ft);
+  if (fs!=='todos') lista=lista.filter(r=>r.status===fs);
+
+  if (!lista.length) {
+    el.innerHTML='<div class="empty"><div class="empty-icon">📋</div><div>Nenhum registro encontrado</div></div>'; return;
+  }
+  el.innerHTML = lista.map(r=>{
+    const statusLabel={Pendente:'⏳ Pendente',Aprovado:'✅ Aprovado',Parcial:'🔶 Parcial',Rejeitado:'❌ Rejeitado'}[r.status]||r.status;
+    const isSol = r.tipo==='Solicitação';
+    const ferrHtml = isSol && r.ferramentas ? `<div class="hist-ferrs">${r.ferramentas.map(f=>{
+      const cls=f.status==='Aprovado'?'aprovado':f.status==='Rejeitado'?'rejeitado':'';
+      return `<div class="ferr-tag ${cls}">${f.nome} <span>×${f.qtd}</span></div>`;
+    }).join('')}</div>` : `<div class="hist-ferrs"><div class="ferr-tag">${r.ferramenta||r.equipamento||''}</div></div>`;
+
+    const resp = r.resposta;
+    const respHtml = resp ? `<div class="hist-resposta">
+      <strong>💬 Resposta do Controle:</strong>
+      ${resp.obs||resp.motivo||'—'}
+      ${resp.data_entrega?`<div style="margin-top:6px;color:var(--accent)">📅 Entrega: <strong>${fmtData(resp.data_entrega)}</strong></div>`:''}
+    </div>` : '';
+
+    return `<div class="hist-card">
+      <div class="hist-header">
+        <div><div class="hist-obra">${r.obra||r.tipo}</div><div class="hist-meta">${r.protocolo} · ${fmtDataHora(r.data_solicitacao)}</div></div>
+        <span class="badge ${r.status.toLowerCase()}">${statusLabel}</span>
+      </div>
+      <div class="hist-body">${ferrHtml}${respHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+function verificarRespostasNovas() {
+  const lista = getRegistros();
+  const novos = lista.filter(r=>r.resposta && !r.resposta.visto_supervisor);
+  document.getElementById('notif-dot').className='dot'+(novos.length?' show':'');
+  if (novos.length) toast(`🔔 ${novos.length} resposta(s) nova(s)`,'ok');
+}
+
+// ══ FERRAMENTAS ══
+function renderFerr() {
+  document.getElementById('ferr-grid').innerHTML = ferrFiltradas.map(f=>`
+    <div class="ferr-item ${selecionados[f.nome]?'selected':''}" onclick="toggleFerr('${f.nome}')">
+      <div class="ferr-icon">${f.icon}</div>
+      <div class="ferr-info"><div class="ferr-nome">${f.nome}</div><div class="ferr-val">${f.val>0?'R$ '+f.val:'—'}</div></div>
+      <div class="ferr-check">✓</div>
+    </div>`).join('');
+}
+
+function filtrarFerr(q) {
+  ferrFiltradas=q?FERRAMENTAS.filter(f=>f.nome.toLowerCase().includes(q.toLowerCase())):[...FERRAMENTAS];
+  renderFerr();
+}
+
+function toggleFerr(nome) {
+  if (selecionados[nome]) delete selecionados[nome];
+  else { const f=FERRAMENTAS.find(x=>x.nome===nome); selecionados[nome]={ferramenta:f,qtd:1}; }
+  renderFerr();
+  const n=Object.keys(selecionados).length;
+  document.getElementById('cart-n').textContent=n;
+  document.getElementById('cart-txt').textContent=n===0?'Nenhuma':n+' ferramenta'+(n>1?'s':'');
+}
+
+function ajustarQtd(nome,d) {
+  if (!selecionados[nome]) return;
+  selecionados[nome].qtd=Math.max(1,selecionados[nome].qtd+d);
+  const el=document.getElementById('qtd-'+nome.replace(/ /g,'_'));
+  if(el) el.textContent=selecionados[nome].qtd;
+}
+
+// ══ STEPS ══
+function irStep2() {
+  if (!document.getElementById('sel-obra').value) { toast('Selecione a obra','err'); return; }
+  showStep('step-ferr'); renderFerr();
+}
+
+function irStep3() {
+  if (!Object.keys(selecionados).length) { toast('Selecione ao menos uma ferramenta','err'); return; }
+  renderRevisao(); showStep('step-rev');
+}
+
+function showStep(id) {
+  ['step-ident','step-ferr','step-rev','step-ok'].forEach(s=>document.getElementById(s).style.display=s===id?'block':'none');
+  window.scrollTo(0,0);
+}
+
+function renderRevisao() {
+  const obra=document.getElementById('sel-obra').value;
+  const urg=document.getElementById('sel-urg').value;
+  const data=document.getElementById('data-nec').value;
+  const urgCor={Normal:'var(--green)',Urgente:'var(--yellow)',Crítico:'var(--red)'}[urg];
+  document.getElementById('rev-info').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><span style="color:var(--muted);font-size:11px;display:block">OBRA</span><strong>${obra}</strong></div>
+      <div><span style="color:var(--muted);font-size:11px;display:block">URGÊNCIA</span><strong style="color:${urgCor}">${urg}</strong></div>
+      <div><span style="color:var(--muted);font-size:11px;display:block">NECESSIDADE</span><strong>${data?fmtData(data):'—'}</strong></div>
+      <div><span style="color:var(--muted);font-size:11px;display:block">SUPERVISOR</span><strong>${userLogado.nome.split(' ')[0]}</strong></div>
+    </div>`;
+  document.getElementById('rev-lista').innerHTML=Object.values(selecionados).map(({ferramenta,qtd})=>`
+    <div class="item-card">
+      <div class="item-icon">${ferramenta.icon}</div>
+      <div class="item-info"><div class="item-nome">${ferramenta.nome}</div><div class="item-detalhe">R$ ${ferramenta.val}/un</div></div>
+      <div class="qtd-ctrl">
+        <button class="qtd-btn" onclick="ajustarQtd('${ferramenta.nome}',-1)">−</button>
+        <div class="qtd-num" id="qtd-${ferramenta.nome.replace(/ /g,'_')}">${qtd}</div>
+        <button class="qtd-btn" onclick="ajustarQtd('${ferramenta.nome}',1)">+</button>
+      </div>
+    </div>`).join('');
+}
+
+function novaSol() {
+  selecionados={};
+  document.getElementById('obs-sol').value='';
+  document.getElementById('busca-ferr').value='';
+  ferrFiltradas=[...FERRAMENTAS];
+  document.getElementById('cart-n').textContent='0';
+  document.getElementById('cart-txt').textContent='Nenhuma';
+  showStep('step-ident');
+}
+
+// ══ UTILS ══
+function mudarTab(id,el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+  if(id==='historico'){document.getElementById('notif-dot').classList.remove('show');renderHistorico();carregarDoBackend();}
+}
+
+function mostrarEnviando(txt) {
+  document.getElementById('sending-txt').textContent=txt;
+  document.getElementById('sending-overlay').classList.add('show');
+}
+function esconderEnviando() { document.getElementById('sending-overlay').classList.remove('show'); }
+
+function fmtData(d){if(!d)return'—';const[y,m,dd]=d.split('-');return`${dd}/${m}/${y}`;}
+function fmtDataHora(iso){if(!iso)return'—';return new Date(iso).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}
+function toast(msg,tipo){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(tipo||'');setTimeout(()=>t.className='toast',3500);}
+
+document.getElementById('login-senha').addEventListener('keypress',e=>{if(e.key==='Enter')fazerLogin();});
+// Limpa caches de registros (mantém sessão e configurações)
+localStorage.removeItem('eices_registros_ctrl');
+// Limpa caches de supervisores
+Object.keys(localStorage).forEach(k => {
+  if (k.startsWith('eices_cache_')) localStorage.removeItem(k);
+});
+verificarSessao();
+</script>
+</body>
+</html>
