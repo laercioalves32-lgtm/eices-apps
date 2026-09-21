@@ -1,0 +1,22 @@
+{
+ "lang": "pt-BR",
+ "display": "standalone",
+ "background_color": "#2F4D65",
+ "theme_color": "#2F4D65",
+ "icons": [
+  {
+   "src": "eices-icone-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "eices-icone-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any maskable"
+  }
+ ],
+ "name": "EICES Controle de Ferramentas",
+ "short_name": "EICES Controle",
+ "start_url": "EICES_App_Controle.html"
+}
