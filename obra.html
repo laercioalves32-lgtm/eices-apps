@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2F4D65">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="EICES Obras">
+<title>EICES — Pedidos da Obra</title>
+<link rel="icon" type="image/png" href="eices-icone-192.png">
+<link rel="apple-touch-icon" href="eices-icone-180.png">
+<link rel="manifest" href="manifest-supervisor.json">
+<style>
+:root{
+  --navy:#2F4D65; --navy-2:#243C50; --menta:#A9D3C4; --teal:#2F9C98; --acao:#1F7F7B; --acao-2:#176663;
+  --fundo:#EEF3F2; --sup:#FFFFFF; --texto:#1C2B36; --suave:#5B6F7C; --linha:#D5DFE1;
+  --pend:#8A5A00; --pend-bg:#FFF3D1; --ok:#1E7A4F; --ok-bg:#E2F3EA; --parc:#A64B12; --parc-bg:#FDEBDD;
+  --rej:#B42318; --rej-bg:#FDE4E1; --ent:#2F4D65; --ent-bg:#E1EBF2; --dev:#4F6270; --dev-bg:#E9EEF0;
+  --r:14px; --fonte:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --marca:"Trajan Pro","Cinzel",Georgia,"Times New Roman",serif;
+  --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:var(--fonte);background:var(--fundo);color:var(--texto);font-size:16px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.escondido{display:none!important}
+img.logo-falha{display:none}
+
+/* abertura */
+#abertura{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:999;transition:opacity .45s}
+#abertura img{width:min(62vw,260px);height:auto}
+#abertura.sair{opacity:0;pointer-events:none}
+
+/* login */
+#tela-login{min-height:100%;display:flex;flex-direction:column}
+.login-topo{background:var(--navy);padding:calc(28px + var(--safe-t)) 24px 44px;text-align:center;border-radius:0 0 50% 50% / 0 0 36px 36px}
+.login-topo img{width:min(52vw,210px);height:auto}
+.login-corpo{flex:1;padding:0 20px 32px;margin-top:-22px}
+.cartao{background:var(--sup);border:1px solid var(--linha);border-radius:var(--r);padding:20px;max-width:440px;margin:0 auto}
+.cartao h1{font-size:1.25rem;margin-bottom:4px}
+.cartao p.sub{color:var(--suave);font-size:.93rem;margin-bottom:18px}
+
+/* campos */
+.campo{margin-bottom:14px}
+.campo label{display:block;font-size:.88rem;font-weight:600;margin-bottom:6px}
+.campo label .obr{color:var(--rej)}
+.campo .dica{font-size:.8rem;color:var(--suave);margin-top:5px}
+input[type=text],input[type=password],input[type=date],input[type=search],select,textarea{
+  width:100%;padding:12px 13px;border:1.5px solid var(--linha);border-radius:10px;background:#fff;min-height:48px;-webkit-appearance:none;appearance:none}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235B6F7C' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:38px}
+textarea{min-height:88px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal)}
+.invalido{border-color:var(--rej)!important;background:#FFF8F7!important}
+.lado{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.check{display:flex;align-items:center;gap:10px;font-size:.93rem;color:var(--suave);margin:4px 0 16px}
+.check input{width:20px;height:20px;accent-color:var(--acao)}
+.erro-box{background:var(--rej-bg);color:var(--rej);border-radius:10px;padding:10px 12px;font-size:.9rem;margin-bottom:14px}
+
+/* botões */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;border:none;border-radius:12px;background:var(--acao);color:#fff;font-weight:700;font-size:1rem;padding:12px 16px}
+.btn:active{background:var(--acao-2)}
+.btn:disabled{opacity:.55}
+.btn.sec{background:#fff;color:var(--navy);border:1.5px solid var(--linha)}
+.btn + .btn{margin-top:10px}
+.seg{display:flex;background:var(--fundo);border:1.5px solid var(--linha);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;border:none;background:transparent;border-radius:9px;padding:10px 6px;font-weight:600;font-size:.92rem;color:var(--suave);min-height:44px}
+.seg button.on{background:#fff;color:var(--navy);box-shadow:0 1px 0 var(--linha)}
+.seg button.on.urg-Urgente,.seg button.on.urg-Média{color:var(--pend)}
+.seg button.on.urg-Crítico,.seg button.on.urg-Alta{color:var(--rej)}
+
+/* cabeçalho do app */
+.topo{background:var(--navy);color:#fff;padding:calc(12px + var(--safe-t)) 18px 26px;position:sticky;top:0;z-index:20;border-radius:0 0 50% 50% / 0 0 22px 22px;overflow:hidden}
+.topo svg.arco{position:absolute;left:50%;top:6px;transform:translateX(-50%);width:140%;height:auto;opacity:.22;pointer-events:none}
+.topo-linha{display:flex;align-items:center;gap:12px;position:relative}
+.topo-linha img{width:38px;height:38px;border-radius:9px}
+.topo-marca{font-family:var(--marca);letter-spacing:.18em;font-size:.78rem;color:var(--menta)}
+.topo-obra{font-size:1.35rem;font-weight:800;line-height:1.15;word-break:break-word}
+.topo-dir{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.topo-sair{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:9px;padding:6px 12px;font-size:.85rem;font-weight:600}
+.conexao{font-size:.75rem;color:var(--menta);display:flex;align-items:center;gap:6px}
+.conexao i{width:8px;height:8px;border-radius:50%;background:var(--menta);display:inline-block}
+.conexao.off{color:#FFD2CC}.conexao.off i{background:#FF8A7A}
+
+/* conteúdo */
+main{padding:16px 16px calc(96px + var(--safe-b));max-width:640px;margin:0 auto}
+.painel{display:none}.painel.on{display:block}
+.bloco{background:var(--sup);border:1px solid var(--linha);border-radius:var(--r);padding:16px;margin-bottom:14px}
+.bloco h2{font-size:1.05rem;margin-bottom:12px}
+.passos{display:flex;gap:6px;margin-bottom:14px}
+.passos span{flex:1;height:5px;border-radius:3px;background:var(--linha)}
+.passos span.on{background:var(--teal)}
+.passo-nome{font-size:.85rem;color:var(--suave);margin-bottom:6px}
+
+/* lista de ferramentas */
+.busca{margin-bottom:10px}
+.ferr{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--linha)}
+.ferr:last-child{border-bottom:none}
+.ferr-nome{flex:1;font-size:.95rem;font-weight:600}
+.ferr.sel .ferr-nome{color:var(--acao)}
+.qtd{display:flex;align-items:center;gap:4px}
+.qtd button{width:42px;height:42px;border-radius:10px;border:1.5px solid var(--linha);background:#fff;font-size:1.3rem;font-weight:700;color:var(--navy)}
+.qtd span{min-width:28px;text-align:center;font-weight:800}
+.espec{padding:0 4px 12px;border-bottom:1px solid var(--linha)}
+.barra-carrinho{position:fixed;left:0;right:0;bottom:calc(64px + var(--safe-b));padding:10px 16px;background:var(--sup);border-top:1px solid var(--linha);display:flex;align-items:center;gap:12px;z-index:25}
+.barra-carrinho b{font-size:1rem}
+.barra-carrinho .btn{width:auto;flex:1}
+.resumo-linha{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--linha);font-size:.95rem}
+.resumo-linha:last-child{border-bottom:none}
+.resumo-linha span:first-child{color:var(--suave)}
+
+/* navegação inferior */
+nav.baixo{position:fixed;left:0;right:0;bottom:0;background:var(--sup);border-top:1px solid var(--linha);display:flex;padding-bottom:var(--safe-b);z-index:30}
+nav.baixo button{flex:1;border:none;background:none;padding:10px 4px 12px;font-size:.8rem;font-weight:600;color:var(--suave);display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;min-height:64px}
+nav.baixo button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8}
+nav.baixo button.on{color:var(--acao)}
+nav.baixo button .ponto{position:absolute;top:8px;left:calc(50% + 10px);width:9px;height:9px;border-radius:50%;background:var(--rej)}
+
+/* pedidos */
+.filtros{display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px}
+.chip{flex-shrink:0;border:1.5px solid var(--linha);background:#fff;border-radius:20px;padding:8px 14px;font-size:.88rem;font-weight:600;color:var(--suave)}
+.chip.on{border-color:var(--navy);color:var(--navy);background:var(--ent-bg)}
+.pedido{background:var(--sup);border:1px solid var(--linha);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.ped-topo{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.ped-titulo{font-weight:700}
+.ped-meta{font-size:.84rem;color:var(--suave);margin-top:2px}
+.selo{font-size:.78rem;font-weight:700;border-radius:20px;padding:4px 10px;white-space:nowrap}
+.s-Pendente{background:var(--pend-bg);color:var(--pend)}
+.s-Aprovado{background:var(--ok-bg);color:var(--ok)}
+.s-Parcial{background:var(--parc-bg);color:var(--parc)}
+.s-Rejeitado{background:var(--rej-bg);color:var(--rej)}
+.s-Entregue{background:var(--ent-bg);color:var(--ent)}
+.s-Devolvido,.s-Concluído{background:var(--dev-bg);color:var(--dev)}
+.s-Em-andamento{background:var(--ok-bg);color:var(--ok)}
+.s-Recusado{background:var(--rej-bg);color:var(--rej)}
+.linha-tempo{display:flex;align-items:center;margin:14px 0 10px}
+.lt-ponto{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.72rem;color:var(--suave);width:25%}
+.lt-ponto i{width:14px;height:14px;border-radius:50%;border:2px solid var(--linha);background:#fff}
+.lt-ponto.feito{color:var(--navy);font-weight:600}
+.lt-ponto.feito i{background:var(--teal);border-color:var(--teal)}
+.lt-ponto.falhou i{background:var(--rej);border-color:var(--rej)}
+.itens{margin-top:8px}
+.item{display:flex;justify-content:space-between;gap:10px;font-size:.9rem;padding:6px 0;border-top:1px dashed var(--linha)}
+.item small{color:var(--suave)}
+.selo-tipo{font-size:.72rem;font-weight:700;border-radius:20px;padding:2px 8px;white-space:nowrap;display:inline-block;margin-top:3px}
+.t-EICES{background:var(--ok-bg);color:var(--ok)}
+.t-LOCADO{background:var(--pend-bg);color:var(--pend)}
+.st-Aprovado{color:var(--ok);font-weight:600}.st-Rejeitado{color:var(--rej);font-weight:600}.st-Pendente{color:var(--pend)}
+.prazo{margin-top:10px;font-size:.88rem;font-weight:600;border-radius:10px;padding:8px 10px;background:var(--fundo)}
+.prazo.atraso{background:var(--rej-bg);color:var(--rej)}
+.prazo.perto{background:var(--pend-bg);color:var(--pend)}
+.resposta{margin-top:10px;background:var(--fundo);border-left:3px solid var(--teal);border-radius:0 10px 10px 0;padding:10px 12px;font-size:.9rem}
+.resposta b{display:block;font-size:.82rem;color:var(--suave);margin-bottom:2px}
+
+/* vazio, envio, sucesso, rodapé */
+.vazio{text-align:center;padding:34px 16px;color:var(--suave)}
+.vazio img{width:84px;opacity:.18;margin-bottom:10px;filter:grayscale(1)}
+.vazio b{display:block;color:var(--texto);margin-bottom:4px}
+#enviando{position:fixed;inset:0;background:rgba(47,77,101,.92);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#fff}
+#enviando img{width:88px;border-radius:18px;animation:pulsa 1.2s ease-in-out infinite}
+@keyframes pulsa{50%{transform:scale(.9);opacity:.7}}
+.sucesso{text-align:center;padding:26px 8px}
+.sucesso img{width:120px;margin-bottom:14px}
+.sucesso h2{font-size:1.35rem;margin-bottom:6px}
+.protocolo{margin:16px auto 20px;border:1.5px dashed var(--teal);border-radius:12px;padding:12px;max-width:260px}
+.protocolo span{display:block;font-size:.82rem;color:var(--suave)}
+.protocolo b{font-size:1.5rem;letter-spacing:.06em;color:var(--navy)}
+footer.rodape{text-align:center;font-size:.72rem;color:var(--suave);padding:18px 16px 4px;line-height:1.5}
+#aviso{position:fixed;left:50%;bottom:calc(140px + var(--safe-b));transform:translateX(-50%);background:var(--texto);color:#fff;padding:12px 18px;border-radius:12px;font-size:.92rem;z-index:300;max-width:calc(100% - 32px);text-align:center;opacity:0;transition:opacity .25s;pointer-events:none}
+#aviso.on{opacity:1}
+#aviso.erro{background:var(--rej)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div id="abertura"><img src="eices-logo.png" alt="EICES" onerror="this.classList.add('logo-falha')"></div>
+
+<!-- ═════════ LOGIN ═════════ -->
+<section id="tela-login" class="escondido">
+  <div class="login-topo"><img src="eices-logo.png" alt="EICES Engenharia, Instalações, Consultoria e Soluções Energéticas" onerror="this.classList.add('logo-falha')"></div>
+  <div class="login-corpo">
+    <form class="cartao" id="form-login" novalidate>
+      <h1>Pedidos da obra</h1>
+      <p class="sub">Escolha a sua obra e digite a senha das obras.</p>
+      <div class="erro-box escondido" id="login-erro"></div>
+      <div class="campo">
+        <label for="login-obra">Obra <span class="obr">*</span></label>
+        <select id="login-obra"><option value="">Carregando obras…</option></select>
+      </div>
+      <div class="campo">
+        <label for="login-senha">Senha <span class="obr">*</span></label>
+        <input type="password" id="login-senha" autocomplete="current-password">
+      </div>
+      <label class="check"><input type="checkbox" id="login-lembrar" checked> Manter conectado neste celular</label>
+      <button class="btn" type="submit" id="btn-entrar">Entrar</button>
+    </form>
+    <footer class="rodape">EICES · Engenharia, Instalações, Consultoria e Soluções Energéticas</footer>
+  </div>
+</section>
+
+<!-- ═════════ APP ═════════ -->
+<section id="tela-app" class="escondido">
+  <header class="topo">
+    <svg class="arco" viewBox="0 0 400 120" aria-hidden="true"><path d="M20 118 A180 110 0 0 1 380 118" stroke="#A9D3C4" stroke-width="3" fill="none"/></svg>
+    <div class="topo-linha">
+      <img src="eices-marca.png" alt="" onerror="this.classList.add('logo-falha')">
+      <div>
+        <div class="topo-marca">EICES</div>
+        <div class="topo-obra" id="topo-obra">—</div>
+      </div>
+      <div class="topo-dir">
+        <button class="topo-sair" id="btn-sair" type="button">Sair</button>
+        <div class="conexao" id="conexao"><i></i><span>Conectando</span></div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- PEDIR FERRAMENTAS -->
+    <div class="painel on" id="p-pedir">
+      <div id="passo1">
+        <div class="passos"><span class="on"></span><span></span><span></span></div>
+        <div class="passo-nome">Passo 1 de 3</div>
+        <div class="bloco">
+          <h2>Dados do pedido</h2>
+          <div class="campo">
+            <label for="sol-nome">Seu nome <span class="obr">*</span></label>
+            <input type="text" id="sol-nome" autocomplete="name" placeholder="Quem está pedindo">
+          </div>
+          <div class="lado">
+            <div class="campo">
+              <label for="sol-nec">Preciso até <span class="obr">*</span></label>
+              <input type="date" id="sol-nec">
+            </div>
+            <div class="campo">
+              <label for="sol-dev">Devolvo até <span class="obr">*</span></label>
+              <input type="date" id="sol-dev">
+            </div>
+          </div>
+          <div class="campo" style="margin-top:-4px"><div class="dica">A data de devolução é o prazo para a ferramenta voltar para a EICES. O controle vai cobrar esse prazo.</div></div>
+          <div class="campo">
+            <label>Urgência <span class="obr">*</span></label>
+            <div class="seg" id="sol-urg" data-valor="Normal">
+              <button type="button" class="on" data-v="Normal">Normal</button>
+              <button type="button" data-v="Urgente" class="urg-Urgente">Urgente</button>
+              <button type="button" data-v="Crítico" class="urg-Crítico">Crítico</button>
+            </div>
+          </div>
+        </div>
+        <button class="btn" type="button" id="btn-passo2">Escolher ferramentas</button>
+      </div>
+
+      <div id="passo2" class="escondido">
+        <div class="passos"><span class="on"></span><span class="on"></span><span></span></div>
+        <div class="passo-nome">Passo 2 de 3</div>
+        <div class="bloco">
+          <h2>Quais ferramentas?</h2>
+          <div class="busca"><input type="search" id="busca" placeholder="Buscar ferramenta" autocomplete="off"></div>
+          <div id="lista-ferr"></div>
+        </div>
+        <button class="btn sec" type="button" id="btn-volta1">Voltar aos dados</button>
+      </div>
+
+      <div id="passo3" class="escondido">
+        <div class="passos"><span class="on"></span><span class="on"></span><span class="on"></span></div>
+        <div class="passo-nome">Passo 3 de 3</div>
+        <div class="bloco">
+          <h2>Confira o pedido</h2>
+          <div id="resumo"></div>
+        </div>
+        <div class="bloco">
+          <h2>Ferramentas</h2>
+          <div id="resumo-ferr"></div>
+        </div>
+        <div class="bloco">
+          <div class="campo" style="margin:0">
+            <label for="sol-obs">Observação</label>
+            <textarea id="sol-obs" placeholder="Algo que o controle precisa saber (opcional)"></textarea>
+          </div>
+        </div>
+        <button class="btn" type="button" id="btn-enviar">Enviar pedido</button>
+        <button class="btn sec" type="button" id="btn-volta2">Voltar às ferramentas</button>
+      </div>
+
+      <div id="passo-ok" class="escondido">
+        <div class="bloco sucesso">
+          <img src="eices-icone-192.png" alt="" onerror="this.classList.add('logo-falha')">
+          <h2>Pedido enviado</h2>
+          <p style="color:var(--suave)">O controle da EICES já recebeu. Acompanhe a resposta em Pedidos da obra.</p>
+          <div class="protocolo"><span>Protocolo</span><b id="ok-proto">—</b></div>
+          <button class="btn" type="button" id="btn-novo">Fazer outro pedido</button>
+          <button class="btn sec" type="button" data-ir="pedidos">Ver pedidos da obra</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MANUTENÇÃO -->
+    <div class="painel" id="p-manut">
+      <div class="bloco">
+        <h2>Pedir manutenção</h2>
+        <div class="campo">
+          <label>O que precisa de manutenção? <span class="obr">*</span></label>
+          <div class="seg" id="man-tipo" data-valor="ferramenta">
+            <button type="button" class="on" data-v="ferramenta">Ferramenta</button>
+            <button type="button" data-v="obra">Equipamento da obra</button>
+          </div>
+        </div>
+        <div id="man-bloco-ferr">
+          <div class="campo">
+            <label for="man-ferr">Ferramenta <span class="obr">*</span></label>
+            <select id="man-ferr"></select>
+          </div>
+          <div class="campo">
+            <label for="man-cod">Código de patrimônio</label>
+            <input type="text" id="man-cod" placeholder="Ex.: PEZ-02" autocapitalize="characters">
+            <div class="dica">Está na etiqueta da ferramenta. Se não encontrar, pode deixar em branco.</div>
+          </div>
+        </div>
+        <div id="man-bloco-obra" class="escondido">
+          <div class="campo">
+            <label for="man-equip">Equipamento <span class="obr">*</span></label>
+            <input type="text" id="man-equip" placeholder="Ex.: bomba do poço de recalque">
+          </div>
+        </div>
+        <div class="campo">
+          <label for="man-desc">Qual é o problema? <span class="obr">*</span></label>
+          <textarea id="man-desc" placeholder="Descreva o defeito"></textarea>
+        </div>
+        <div class="campo">
+          <label>Urgência <span class="obr">*</span></label>
+          <div class="seg" id="man-urg" data-valor="">
+            <button type="button" data-v="Baixa">Baixa</button>
+            <button type="button" data-v="Média" class="urg-Média">Média</button>
+            <button type="button" data-v="Alta" class="urg-Alta">Alta</button>
+          </div>
+        </div>
+        <div class="campo">
+          <label for="man-uso">A ferramenta ainda está em uso? <span class="obr">*</span></label>
+          <select id="man-uso">
+            <option value="">Selecione</option>
+            <option>Sim, ainda em uso</option>
+            <option>Não, está parada</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="man-nome">Seu nome <span class="obr">*</span></label>
+          <input type="text" id="man-nome" autocomplete="name">
+        </div>
+        <button class="btn" type="button" id="btn-manut">Enviar pedido de manutenção</button>
+      </div>
+    </div>
+
+    <!-- PEDIDOS DA OBRA -->
+    <div class="painel" id="p-pedidos">
+      <div class="filtros" id="filtros">
+        <button class="chip on" data-f="todos" type="button">Todos</button>
+        <button class="chip" data-f="aberto" type="button">Em andamento</button>
+        <button class="chip" data-f="obra" type="button">Na obra agora</button>
+        <button class="chip" data-f="fim" type="button">Concluídos</button>
+      </div>
+      <button class="btn sec" type="button" id="btn-atualizar" style="margin-bottom:12px">Atualizar lista</button>
+      <div id="lista-pedidos"></div>
+    </div>
+
+    <footer class="rodape">EICES · Engenharia, Instalações, Consultoria e Soluções Energéticas</footer>
+  </main>
+
+  <div class="barra-carrinho escondido" id="barra">
+    <b id="barra-txt">0 ferramentas</b>
+    <button class="btn" type="button" id="btn-passo3">Revisar pedido</button>
+  </div>
+
+  <nav class="baixo">
+    <button class="on" data-ir="pedir" type="button"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg>Pedir ferramentas</button>
+    <button data-ir="manut" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Manutenção</button>
+    <button data-ir="pedidos" type="button"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>Pedidos da obra<span class="ponto escondido" id="ponto-novo"></span></button>
+  </nav>
+</section>
+
+<div id="enviando" class="escondido"><img src="eices-icone-192.png" alt="" onerror="this.classList.add('logo-falha')"><div id="enviando-txt">Enviando…</div></div>
+<div id="aviso" role="status" aria-live="polite"></div>
+
+<script>
+// ══ CONFIGURAÇÃO ═══════════════════════════════════════════════
+const API = 'https://script.google.com/macros/s/AKfycbzi3rXXap4Ariyam8VkwVSaN6FicwGUUQ-VaaYFIEnwVeL-Vr6IkFBX6e3Xf_HwdJ9dvQ/exec';
+
+const FERRAMENTAS = [
+  'ALARGADOR PEX','ALICATE VAZADOR','ANDAIME (ESPECIFICAR)','COMPRESSOR DE AR','FURADEIRA DE BANCADA',
+  'FURADEIRA ROMPEDOR','FURADEIRA SDS PLUS','GRIFO (DEFINIR TAMANHO)','JOGO DE CHAVE CATRACA','LASER',
+  'LIXADEIRA ESMERILHADEIRA 4"','LIXADEIRA ESMERILHADEIRA 9"','MANÔMETRO U','MAQUINA DE RANHURA',
+  'MAQUINA DE ROSCA','MAQUINA DE TESTE (ÁGUA FRIA)','MAQUINA DE TINTA','MAQUINA TESTE (ÁGUA QUENTE)',
+  'MARTELETE 05KG','MARTELETE 10KG','MARTELETE 20KG','MORÇA (DEFINIR TAMANHO)','PARAFUSADEIRA',
+  'PERFURATRIZ','PERFURATRIZ EXTRATORA','PISTOLA FINCA PINO','POLIGROOVET CUT 8','PRENSA GÁS',
+  'PRENSA PEX','PRENSA TERMINAL','PULVERIZADORA','RÁDIO','SERRA CIRULAR 4"','SERRA CIRULAR 9"',
+  'SOPRADOR','TERMOFUSOR','TESOURA CORTA FERRO','TRIPÉ (LASER)'
+];
+// usada só se o servidor não responder na hora do login
+const OBRAS_RESERVA = ['ALPHA ONE','ALTIER','ANGELICA','ARENGA (TRISUL)','ARTHUR PRADO','BALTAZAR','BIOMA',
+  'CUNHA GAGO','ENXOVIA','INFRA','JERONIMO','JOA','MAURO','ORIÇANGA','PJM','SAMPA CONSOLAÇÃO','TANABI','VIRGILIO'];
+
+// ══ ESTADO ═════════════════════════════════════════════════════
+let sessao = null;          // {obra, senha}
+let carrinho = {};          // nome -> {qtd, espec}
+let pedidos = [];
+let filtro = 'todos';
+let online = false;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const precisaEspec = n => /ESPECIFICAR|DEFINIR/.test(n);
+const hojeISO = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+const fmt = d => { if (!d) return '—'; const [y,m,dd] = String(d).slice(0,10).split('-'); return dd && m ? `${dd}/${m}/${y}` : d; };
+const fmtHora = iso => { const d = new Date(iso); return isNaN(d) ? '—' : d.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); };
+const dias = d => Math.round((new Date(d + 'T00:00:00') - new Date(hojeISO() + 'T00:00:00')) / 86400000);
+
+function aviso(msg, erro) {
+  const a = $('aviso'); a.textContent = msg; a.className = 'on' + (erro ? ' erro' : '');
+  clearTimeout(aviso.t); aviso.t = setTimeout(() => a.className = '', erro ? 4500 : 3000);
+}
+function marcarInvalido(el, msg) {
+  el.classList.add('invalido'); el.focus && el.focus();
+  el.addEventListener('input', () => el.classList.remove('invalido'), {once:true});
+  el.addEventListener('change', () => el.classList.remove('invalido'), {once:true});
+  aviso(msg, true); return false;
+}
+
+// ══ SERVIDOR ═══════════════════════════════════════════════════
+async function api(corpo, ms = 25000) {
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), ms);
+  try {
+    const r = await fetch(API, {method:'POST', body: JSON.stringify(corpo), signal: ctl.signal});
+    const j = await r.json(); definirConexao(true);
+    if (j.status === 'negado') { sair(j.msg); throw new Error(j.msg); }
+    return j;
+  } catch (e) { if (e.name === 'AbortError' || e instanceof TypeError) definirConexao(false); throw e; }
+  finally { clearTimeout(t); }
+}
+function definirConexao(ok) {
+  online = ok; const c = $('conexao'); if (!c) return;
+  c.className = 'conexao' + (ok ? '' : ' off'); c.querySelector('span').textContent = ok ? 'Conectado' : 'Sem conexão';
+}
+
+// ══ LOGIN ══════════════════════════════════════════════════════
+function preencherObras(lista) {
+  const sel = $('login-obra'); const ultima = localStorage.getItem('eices_ultima_obra') || '';
+  sel.innerHTML = '<option value="">Selecione a obra</option>' +
+    lista.map(o => `<option ${o === ultima ? 'selected' : ''}>${esc(o)}</option>`).join('');
+}
+async function carregarObras() {
+  try {
+    const j = await api({acao:'obras'}, 12000);
+    const lista = (j.obras || []).map(o => o.nome);
+    preencherObras(lista.length ? lista : OBRAS_RESERVA);
+  } catch (e) { preencherObras(OBRAS_RESERVA); }
+}
+
+$('form-login').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const obra = $('login-obra').value, senha = $('login-senha').value.trim(), err = $('login-erro');
+  err.classList.add('escondido');
+  if (!obra)  return marcarInvalido($('login-obra'), 'Escolha a sua obra');
+  if (!senha) return marcarInvalido($('login-senha'), 'Digite a senha das obras');
+  const btn = $('btn-entrar'); btn.disabled = true; btn.textContent = 'Verificando…';
+  try {
+    const j = await api({acao:'login', perfil:'obra', senha});
+    if (j.status !== 'ok') { err.textContent = 'Senha incorreta. Confira com o controle da EICES.'; err.classList.remove('escondido'); return; }
+    sessao = {obra, senha};
+    const guardar = $('login-lembrar').checked ? localStorage : sessionStorage;
+    guardar.setItem('eices_obra_sessao', JSON.stringify(sessao));
+    localStorage.setItem('eices_ultima_obra', obra);
+    abrirApp();
+  } catch (e) {
+    err.textContent = 'Sem conexão com o servidor. Verifique a internet e tente de novo.'; err.classList.remove('escondido');
+  } finally { btn.disabled = false; btn.textContent = 'Entrar'; }
+});
+
+function sair(msg) {
+  localStorage.removeItem('eices_obra_sessao'); sessionStorage.removeItem('eices_obra_sessao');
+  sessao = null; pedidos = [];
+  $('tela-app').classList.add('escondido'); $('tela-login').classList.remove('escondido');
+  $('login-senha').value = '';
+  if (msg) { const e = $('login-erro'); e.textContent = msg; e.classList.remove('escondido'); }
+  carregarObras();
+}
+$('btn-sair').addEventListener('click', () => { if (confirm('Sair desta obra?')) sair(); });
+
+function abrirApp() {
+  $('tela-login').classList.add('escondido'); $('tela-app').classList.remove('escondido');
+  $('topo-obra').textContent = sessao.obra;
+  const nome = localStorage.getItem('eices_nome') || '';
+  $('sol-nome').value = nome; $('man-nome').value = nome;
+  $('sol-nec').min = hojeISO(); $('sol-dev').min = hojeISO();
+  restaurarRascunho();
+  carregarPedidos();
+}
+
+// ══ NAVEGAÇÃO ══════════════════════════════════════════════════
+function ir(aba) {
+  document.querySelectorAll('nav.baixo button').forEach(b => b.classList.toggle('on', b.dataset.ir === aba));
+  ['pedir','manut','pedidos'].forEach(p => $('p-' + p).classList.toggle('on', p === aba));
+  $('barra').classList.toggle('escondido', !(aba === 'pedir' && !$('passo2').classList.contains('escondido')));
+  window.scrollTo(0, 0);
+  if (aba === 'pedidos') { marcarVisto(); renderPedidos(); carregarPedidos(); }
+}
+document.querySelectorAll('[data-ir]').forEach(b => b.addEventListener('click', () => ir(b.dataset.ir)));
+
+document.querySelectorAll('.seg').forEach(seg => seg.addEventListener('click', ev => {
+  const b = ev.target.closest('button'); if (!b) return;
+  seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  seg.dataset.valor = b.dataset.v; seg.classList.remove('invalido');
+  if (seg.id === 'man-tipo') {
+    $('man-bloco-ferr').classList.toggle('escondido', b.dataset.v !== 'ferramenta');
+    $('man-bloco-obra').classList.toggle('escondido', b.dataset.v !== 'obra');
+  }
+}));
+
+// ══ PEDIDO DE FERRAMENTAS ══════════════════════════════════════
+function passo(n) {
+  ['passo1','passo2','passo3','passo-ok'].forEach((p, i) => $(p).classList.toggle('escondido', p !== n));
+  $('barra').classList.toggle('escondido', n !== 'passo2');
+  window.scrollTo(0, 0);
+}
+$('btn-passo2').addEventListener('click', () => {
+  const nome = $('sol-nome'), nec = $('sol-nec'), dev = $('sol-dev');
+  if (!nome.value.trim()) return marcarInvalido(nome, 'Digite o seu nome');
+  if (!nec.value) return marcarInvalido(nec, 'Informe até quando precisa das ferramentas');
+  if (nec.value < hojeISO()) return marcarInvalido(nec, 'A data de necessidade não pode ser no passado');
+  if (!dev.value) return marcarInvalido(dev, 'Informe a data de devolução');
+  if (dev.value < nec.value) return marcarInvalido(dev, 'A devolução precisa ser depois da data de necessidade');
+  localStorage.setItem('eices_nome', nome.value.trim());
+  renderFerr(); passo('passo2');
+});
+$('btn-volta1').addEventListener('click', () => passo('passo1'));
+$('btn-volta2').addEventListener('click', () => { renderFerr(); passo('passo2'); });
+$('busca').addEventListener('input', renderFerr);
+
+function renderFerr() {
+  const q = $('busca').value.trim().toUpperCase();
+  const lista = FERRAMENTAS.filter(n => !q || n.toUpperCase().includes(q));
+  $('lista-ferr').innerHTML = lista.length ? lista.map(n => {
+    const c = carrinho[n]; const qtd = c ? c.qtd : 0; const id = FERRAMENTAS.indexOf(n);
+    return `<div class="ferr ${qtd ? 'sel' : ''}">
+      <div class="ferr-nome">${esc(n)}</div>
+      <div class="qtd"><button type="button" aria-label="Menos ${esc(n)}" onclick="mudarQtd(${id},-1)">−</button><span>${qtd}</span><button type="button" aria-label="Mais ${esc(n)}" onclick="mudarQtd(${id},1)">+</button></div>
+    </div>` + (qtd && precisaEspec(n) ? `<div class="espec"><input type="text" id="espec-${id}" placeholder="${n.includes('ANDAIME') ? 'Qual andaime? Ex.: tubular 1,5 m' : 'Qual tamanho? Ex.: 18 pol'}" value="${esc(c.espec || '')}" oninput="carrinho[FERRAMENTAS[${id}]].espec=this.value;salvarRascunho()"></div>` : '');
+  }).join('') : `<div class="vazio"><b>Nenhuma ferramenta com esse nome</b>Tente outra palavra, por exemplo "martelete".</div>`;
+  const total = Object.values(carrinho).reduce((s, c) => s + c.qtd, 0);
+  const tipos = Object.keys(carrinho).length;
+  $('barra-txt').textContent = total ? `${tipos} ${tipos > 1 ? 'itens' : 'item'}, ${total} un.` : 'Nada escolhido';
+}
+function mudarQtd(id, d) {
+  const n = FERRAMENTAS[id]; const atual = carrinho[n] ? carrinho[n].qtd : 0; const nova = Math.max(0, Math.min(99, atual + d));
+  if (nova === 0) delete carrinho[n]; else carrinho[n] = {qtd: nova, espec: carrinho[n] ? carrinho[n].espec : ''};
+  renderFerr(); salvarRascunho();
+}
+$('btn-passo3').addEventListener('click', () => {
+  const nomes = Object.keys(carrinho);
+  if (!nomes.length) return aviso('Escolha pelo menos uma ferramenta', true);
+  for (const n of nomes) {
+    if (precisaEspec(n) && !(carrinho[n].espec || '').trim()) {
+      const el = $('espec-' + FERRAMENTAS.indexOf(n));
+      return el ? marcarInvalido(el, 'Informe o tipo ou tamanho de ' + n.split(' (')[0]) : aviso('Informe o tipo ou tamanho', true);
+    }
+  }
+  const urg = $('sol-urg').dataset.valor;
+  $('resumo').innerHTML = [
+    ['Obra', sessao.obra], ['Quem pediu', $('sol-nome').value.trim()], ['Preciso até', fmt($('sol-nec').value)],
+    ['Devolvo até', fmt($('sol-dev').value)], ['Urgência', urg]
+  ].map(([a, b]) => `<div class="resumo-linha"><span>${a}</span><b>${esc(b)}</b></div>`).join('');
+  $('resumo-ferr').innerHTML = nomes.map(n => `<div class="resumo-linha"><span>${esc(n)}${carrinho[n].espec ? '<br><small>' + esc(carrinho[n].espec) + '</small>' : ''}</span><b>${carrinho[n].qtd} un.</b></div>`).join('');
+  passo('passo3');
+});
+
+async function enviar(dados, acao, rotulo) {
+  $('enviando-txt').textContent = rotulo; $('enviando').classList.remove('escondido');
+  try {
+    const j = await api({acao, senha: sessao.senha, dados});
+    if (j.status !== 'ok') throw new Error(j.msg || 'erro');
+    return true;
+  } catch (e) {
+    aviso('Não foi possível enviar. Verifique a internet e toque em enviar de novo. Nada foi perdido.', true);
+    return false;
+  } finally { $('enviando').classList.add('escondido'); }
+}
+const novoProtocolo = p => p + '-' + Date.now().toString().slice(-7);
+
+$('btn-enviar').addEventListener('click', async () => {
+  const btn = $('btn-enviar'); btn.disabled = true;
+  const dados = {
+    protocolo: novoProtocolo('SOL'), tipo: 'Solicitação', obra: sessao.obra,
+    solicitante: $('sol-nome').value.trim(), urgencia: $('sol-urg').dataset.valor,
+    data_necessidade: $('sol-nec').value, data_devolucao: $('sol-dev').value,
+    observacao: $('sol-obs').value.trim(),
+    ferramentas: Object.keys(carrinho).map(n => ({nome: n, qtd: carrinho[n].qtd, espec: (carrinho[n].espec || '').trim(), status: 'Pendente'})),
+    data_solicitacao: new Date().toISOString(), status: 'Pendente'
+  };
+  const ok = await enviar(dados, 'nova_solicitacao', 'Enviando pedido…');
+  btn.disabled = false;
+  if (ok) { $('ok-proto').textContent = dados.protocolo; carrinho = {}; $('sol-obs').value = ''; limparRascunho(); passo('passo-ok'); carregarPedidos(); }
+});
+$('btn-novo').addEventListener('click', () => {
+  carrinho = {}; $('busca').value = ''; $('sol-nec').value = ''; $('sol-dev').value = '';
+  limparRascunho(); passo('passo1');
+});
+
+// ══ MANUTENÇÃO ═════════════════════════════════════════════════
+$('man-ferr').innerHTML = '<option value="">Selecione a ferramenta</option>' + FERRAMENTAS.map(n => `<option>${esc(n)}</option>`).join('');
+$('man-cod').addEventListener('input', e => e.target.value = e.target.value.toUpperCase());
+
+$('btn-manut').addEventListener('click', async () => {
+  const tipo = $('man-tipo').dataset.valor;
+  if (tipo === 'ferramenta' && !$('man-ferr').value) return marcarInvalido($('man-ferr'), 'Escolha a ferramenta');
+  if (tipo === 'obra' && !$('man-equip').value.trim()) return marcarInvalido($('man-equip'), 'Descreva o equipamento');
+  if (!$('man-desc').value.trim()) return marcarInvalido($('man-desc'), 'Descreva o problema');
+  if (!$('man-urg').dataset.valor) return marcarInvalido($('man-urg'), 'Escolha a urgência');
+  if (!$('man-uso').value) return marcarInvalido($('man-uso'), 'Informe se está em uso');
+  if (!$('man-nome').value.trim()) return marcarInvalido($('man-nome'), 'Digite o seu nome');
+  localStorage.setItem('eices_nome', $('man-nome').value.trim());
+  const dados = {
+    protocolo: novoProtocolo('MAN'), tipo: 'Manutenção', subtipo: tipo, obra: sessao.obra,
+    solicitante: $('man-nome').value.trim(), urgencia: $('man-urg').dataset.valor,
+    ferramenta: tipo === 'ferramenta' ? $('man-ferr').value : '', patrimonio: tipo === 'ferramenta' ? $('man-cod').value.trim() : '',
+    equipamento: tipo === 'obra' ? $('man-equip').value.trim() : '', descricao: $('man-desc').value.trim(),
+    em_uso: $('man-uso').value, data_solicitacao: new Date().toISOString(), status: 'Pendente', ferramentas: []
+  };
+  const ok = await enviar(dados, 'nova_manutencao', 'Enviando pedido de manutenção…');
+  if (!ok) return;
+  aviso('Pedido de manutenção enviado. Protocolo ' + dados.protocolo);
+  ['man-ferr','man-cod','man-equip','man-desc','man-uso'].forEach(id => $(id).value = '');
+  $('man-urg').dataset.valor = ''; $('man-urg').querySelectorAll('button').forEach(b => b.classList.remove('on'));
+  carregarPedidos(); ir('pedidos');
+});
+
+// ══ PEDIDOS DA OBRA ════════════════════════════════════════════
+async function carregarPedidos() {
+  if (!sessao) return;
+  try {
+    const j = await api({acao:'listar_obra', senha: sessao.senha, obra: sessao.obra});
+    if (j.status === 'ok') {
+      pedidos = j.registros || [];
+      localStorage.setItem('eices_cache_' + sessao.obra, JSON.stringify(pedidos));
+      checarNovidades();
+      if ($('p-pedidos').classList.contains('on')) renderPedidos();
+    }
+  } catch (e) {
+    if (!pedidos.length) { try { pedidos = JSON.parse(localStorage.getItem('eices_cache_' + sessao.obra) || '[]'); } catch (x) {} }
+  }
+}
+const chaveVisto = () => 'eices_visto_' + (sessao ? sessao.obra : '');
+function checarNovidades() {
+  const visto = localStorage.getItem(chaveVisto()) || '';
+  const novo = pedidos.some(p => p.status !== 'Pendente' && p.atualizado_em && p.atualizado_em > visto);
+  $('ponto-novo').classList.toggle('escondido', !novo || $('p-pedidos').classList.contains('on'));
+}
+function marcarVisto() { localStorage.setItem(chaveVisto(), new Date().toISOString()); $('ponto-novo').classList.add('escondido'); }
+
+$('btn-atualizar').addEventListener('click', async () => { aviso('Buscando respostas do controle…'); await carregarPedidos(); renderPedidos(); });
+$('filtros').addEventListener('click', ev => {
+  const b = ev.target.closest('.chip'); if (!b) return;
+  filtro = b.dataset.f; document.querySelectorAll('#filtros .chip').forEach(c => c.classList.toggle('on', c === b)); renderPedidos();
+});
+
+function linhaTempo(p) {
+  const st = p.status;
+  if (st === 'Rejeitado') return `<div class="linha-tempo"><div class="lt-ponto feito"><i></i>Enviado</div><div class="lt-ponto falhou"><i></i>Recusado</div><div class="lt-ponto"></div><div class="lt-ponto"></div></div>`;
+  const ordem = ['Pendente','Aprovado','Entregue','Devolvido'];
+  const nivel = st === 'Parcial' ? 1 : Math.max(0, ordem.indexOf(st));
+  const nomes = ['Enviado', st === 'Parcial' ? 'Aprovado em parte' : 'Aprovado', 'Entregue', 'Devolvido'];
+  return `<div class="linha-tempo">${nomes.map((n, i) => `<div class="lt-ponto ${i <= nivel ? 'feito' : ''}"><i></i>${n}</div>`).join('')}</div>`;
+}
+function prazoHTML(p) {
+  if (p.tipo !== 'Solicitação' || !p.data_devolucao || ['Rejeitado','Devolvido'].includes(p.status)) return '';
+  const n = dias(p.data_devolucao);
+  if (p.status !== 'Entregue') return `<div class="prazo">Devolução combinada para ${fmt(p.data_devolucao)}</div>`;
+  if (n < 0) return `<div class="prazo atraso">Devolução atrasada há ${-n} ${-n === 1 ? 'dia' : 'dias'}. Combinado: ${fmt(p.data_devolucao)}</div>`;
+  if (n <= 2) return `<div class="prazo perto">Devolver até ${fmt(p.data_devolucao)}, ${n === 0 ? 'é hoje' : 'faltam ' + n + (n === 1 ? ' dia' : ' dias')}</div>`;
+  return `<div class="prazo">Devolver até ${fmt(p.data_devolucao)}, faltam ${n} dias</div>`;
+}
+function origemFerr(f) {
+  const cods = (f.patrimonio || '').split(',').map(x => x.trim()).filter(Boolean);
+  const locs = f.locados || [];
+  if (!cods.length && !locs.length) return '';
+  return '<br>' + cods.map(x => `<span class="selo-tipo t-EICES">EICES ${esc(x)}</span>`).join(' ') + ' '
+    + locs.map(l => `<span class="selo-tipo t-LOCADO">Locado ${esc(l.fornecedor)}</span>`).join(' ');
+}
+function renderPedidos() {
+  let lista = pedidos.slice();
+  if (filtro === 'aberto') lista = lista.filter(p => ['Pendente','Aprovado','Parcial','Em andamento'].includes(p.status));
+  if (filtro === 'obra')   lista = lista.filter(p => p.status === 'Entregue');
+  if (filtro === 'fim')    lista = lista.filter(p => ['Rejeitado','Devolvido','Concluído','Recusado'].includes(p.status));
+  const el = $('lista-pedidos');
+  if (!lista.length) {
+    el.innerHTML = `<div class="vazio"><img src="eices-marca.png" alt="" onerror="this.classList.add('logo-falha')"><b>${pedidos.length ? 'Nenhum pedido neste filtro' : 'Nenhum pedido desta obra ainda'}</b>${pedidos.length ? 'Toque em Todos para ver tudo.' : 'Use Pedir ferramentas para fazer o primeiro.'}</div>`;
+    return;
+  }
+  el.innerHTML = lista.map(p => {
+    const r = p.resposta || {};
+    const titulo = p.tipo === 'Manutenção' ? 'Manutenção: ' + (p.ferramenta || p.equipamento || '') : 'Pedido de ferramentas';
+    const rotulo = {Pendente:'Aguardando', Aprovado:'Aprovado', Parcial:'Aprovado em parte', Rejeitado:'Recusado', Entregue:'Na obra', Devolvido:'Devolvido', 'Em andamento':'Em andamento', 'Concluído':'Concluída', Recusado:'Recusada'}[p.status] || p.status;
+    const itens = (p.ferramentas || []).map(f => `<div class="item"><span>${esc(f.nome)} <small>× ${f.qtd}${f.espec ? ', ' + esc(f.espec) : ''}</small>${origemFerr(f)}</span><span class="st-${esc(f.status)}">${f.status === 'Aprovado' ? 'Aprovada' : f.status === 'Rejeitado' ? 'Recusada' : 'Aguardando'}</span></div>`).join('');
+    const manut = p.tipo === 'Manutenção' ? `<div class="item"><span>${esc(p.descricao)}${p.patrimonio ? ' <small>cód. ' + esc(p.patrimonio) + '</small>' : ''}</span><span>${esc(p.urgencia)}</span></div>` : '';
+    const resp = (r.obs || r.motivo || r.status_man) ? `<div class="resposta"><b>Resposta do controle</b>${r.status_man ? esc(r.status_man) + '. ' : ''}${esc(r.obs || r.motivo || '')}${r.data_entrega ? '<br>Entrega prevista: <b style="display:inline;color:var(--navy)">' + fmt(r.data_entrega) + '</b>' : ''}${r.data_atendimento ? '<br>Previsão de atendimento: ' + fmt(r.data_atendimento) : ''}</div>` : '';
+    return `<article class="pedido">
+      <div class="ped-topo"><div><div class="ped-titulo">${esc(titulo)}</div><div class="ped-meta">${esc(p.protocolo)}, por ${esc(p.solicitante || '—')} em ${fmtHora(p.data_solicitacao)}</div></div><span class="selo s-${esc(String(p.status).replace(/ /g,'-'))}">${esc(rotulo)}</span></div>
+      ${p.tipo === 'Solicitação' ? linhaTempo(p) : ''}
+      <div class="itens">${itens}${manut}</div>${prazoHTML(p)}${resp}
+    </article>`;
+  }).join('');
+}
+
+// ══ RASCUNHO (não perde o pedido se a página recarregar) ═══════
+const chaveRascunho = () => 'eices_rascunho_' + (sessao ? sessao.obra : '');
+function salvarRascunho() {
+  if (!sessao) return;
+  const r = {nome: $('sol-nome').value, nec: $('sol-nec').value, dev: $('sol-dev').value,
+    urg: $('sol-urg').dataset.valor, obs: $('sol-obs').value, carrinho};
+  const vazio = !r.nome && !r.nec && !r.dev && !r.obs && !Object.keys(carrinho).length;
+  try { vazio ? localStorage.removeItem(chaveRascunho()) : localStorage.setItem(chaveRascunho(), JSON.stringify(r)); } catch (e) {}
+}
+function restaurarRascunho() {
+  let r = null; try { r = JSON.parse(localStorage.getItem(chaveRascunho()) || 'null'); } catch (e) {}
+  if (!r) return;
+  $('sol-nome').value = r.nome || $('sol-nome').value; $('sol-nec').value = r.nec || ''; $('sol-dev').value = r.dev || '';
+  $('sol-obs').value = r.obs || ''; carrinho = r.carrinho || {};
+  if (r.urg) { const seg = $('sol-urg'); seg.dataset.valor = r.urg; seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === r.urg)); }
+  renderFerr();
+  if (Object.keys(carrinho).length) aviso('Seu pedido em andamento foi recuperado');
+}
+function limparRascunho() { try { localStorage.removeItem(chaveRascunho()); } catch (e) {} }
+['sol-nome','sol-nec','sol-dev','sol-obs'].forEach(id => $(id).addEventListener('input', salvarRascunho));
+$('sol-urg').addEventListener('click', salvarRascunho);
+
+// atualiza a lista só quando o app volta a ficar visível, nunca durante o preenchimento
+function podeAtualizar() {
+  if (!sessao || !$('p-pedidos').classList.contains('on')) return false;
+  const a = document.activeElement;
+  return !(a && ['INPUT','TEXTAREA','SELECT'].includes(a.tagName));
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && podeAtualizar()) carregarPedidos(); });
+window.addEventListener('focus', () => { if (podeAtualizar()) carregarPedidos(); });
+
+// ══ INÍCIO ═════════════════════════════════════════════════════
+(async function iniciar() {
+  const inicio = Date.now();
+  try { sessao = JSON.parse(localStorage.getItem('eices_obra_sessao') || sessionStorage.getItem('eices_obra_sessao') || 'null'); } catch (e) { sessao = null; }
+  if (sessao) {
+    try { pedidos = JSON.parse(localStorage.getItem('eices_cache_' + sessao.obra) || '[]'); } catch (e) {}
+    abrirApp();
+  } else {
+    $('tela-login').classList.remove('escondido');
+    await carregarObras();
+  }
+  setTimeout(() => { const a = $('abertura'); a.classList.add('sair'); setTimeout(() => a.remove(), 500); }, Math.max(0, 900 - (Date.now() - inicio)));
+})();
+</script>
+</body>
+</html>
