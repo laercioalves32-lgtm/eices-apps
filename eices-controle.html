@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2F4D65">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="EICES Controle">
+<title>EICES Controle</title>
+<link rel="icon" type="image/png" href="eices-icone-192.png">
+<link rel="apple-touch-icon" href="eices-icone-180.png">
+<link rel="manifest" href="manifest-controle.json">
+<style>
+:root{
+  --navy:#2F4D65; --navy-2:#243C50; --menta:#A9D3C4; --teal:#2F9C98; --acao:#1F7F7B; --acao-2:#176663;
+  --fundo:#EEF3F2; --sup:#FFFFFF; --texto:#1C2B36; --suave:#5B6F7C; --linha:#D5DFE1;
+  --pend:#8A5A00; --pend-bg:#FFF3D1; --ok:#1E7A4F; --ok-bg:#E2F3EA; --parc:#A64B12; --parc-bg:#FDEBDD;
+  --rej:#B42318; --rej-bg:#FDE4E1; --ent:#2F4D65; --ent-bg:#E1EBF2; --dev:#4F6270; --dev-bg:#E9EEF0;
+  --r:14px; --fonte:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --marca:"Trajan Pro","Cinzel",Georgia,"Times New Roman",serif;
+  --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:var(--fonte);background:var(--fundo);color:var(--texto);font-size:16px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.escondido{display:none!important}
+img.logo-falha{display:none}
+
+#abertura{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:999;transition:opacity .45s}
+#abertura img{width:min(62vw,260px);height:auto}
+#abertura.sair{opacity:0;pointer-events:none}
+
+#tela-login{min-height:100%;display:flex;flex-direction:column}
+.login-topo{background:var(--navy);padding:calc(28px + var(--safe-t)) 24px 44px;text-align:center;border-radius:0 0 50% 50% / 0 0 36px 36px}
+.login-topo img{width:min(52vw,210px);height:auto}
+.login-corpo{flex:1;padding:0 20px 32px;margin-top:-22px}
+.cartao{background:var(--sup);border:1px solid var(--linha);border-radius:var(--r);padding:20px;max-width:440px;margin:0 auto}
+.cartao h1{font-size:1.25rem;margin-bottom:4px}
+.cartao p.sub{color:var(--suave);font-size:.93rem;margin-bottom:18px}
+
+.campo{margin-bottom:14px}
+.campo label{display:block;font-size:.88rem;font-weight:600;margin-bottom:6px}
+.obr{color:var(--rej)}
+.dica{font-size:.8rem;color:var(--suave);margin-top:5px}
+input[type=text],input[type=password],input[type=date],input[type=search],select,textarea{
+  width:100%;padding:11px 13px;border:1.5px solid var(--linha);border-radius:10px;background:#fff;min-height:46px;-webkit-appearance:none;appearance:none}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235B6F7C' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:38px}
+textarea{min-height:80px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal)}
+.invalido{border-color:var(--rej)!important;background:#FFF8F7!important}
+.lado{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.check{display:flex;align-items:center;gap:10px;font-size:.93rem;color:var(--suave);margin:4px 0 16px}
+.check input{width:20px;height:20px;accent-color:var(--acao)}
+.erro-box{background:var(--rej-bg);color:var(--rej);border-radius:10px;padding:10px 12px;font-size:.9rem;margin-bottom:14px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;border:none;border-radius:11px;background:var(--acao);color:#fff;font-weight:700;font-size:.95rem;padding:10px 16px}
+.btn:active{background:var(--acao-2)}
+.btn:disabled{opacity:.55}
+.btn.sec{background:#fff;color:var(--navy);border:1.5px solid var(--linha)}
+.btn.perigo{background:#fff;color:var(--rej);border:1.5px solid #F1B8B1}
+.btn.cheio{width:100%}
+.acoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.acoes .btn{flex:1 1 auto}
+.seg{display:inline-flex;background:var(--fundo);border:1.5px solid var(--linha);border-radius:10px;padding:3px;gap:3px}
+.seg button{border:none;background:transparent;border-radius:8px;padding:8px 12px;font-weight:600;font-size:.88rem;color:var(--suave);min-height:38px}
+.seg button.on.v-Aprovado{background:var(--ok-bg);color:var(--ok)}
+.seg button.on.v-Rejeitado{background:var(--rej-bg);color:var(--rej)}
+.seg button.on{background:#fff;color:var(--navy)}
+
+.topo{background:var(--navy);color:#fff;padding:calc(12px + var(--safe-t)) 18px 24px;position:sticky;top:0;z-index:20;border-radius:0 0 50% 50% / 0 0 22px 22px;overflow:hidden}
+.topo svg.arco{position:absolute;left:50%;top:6px;transform:translateX(-50%);width:140%;height:auto;opacity:.22;pointer-events:none}
+.topo-linha{display:flex;align-items:center;gap:12px;position:relative;max-width:980px;margin:0 auto}
+.topo-linha img{width:38px;height:38px;border-radius:9px}
+.topo-marca{font-family:var(--marca);letter-spacing:.18em;font-size:.78rem;color:var(--menta)}
+.topo-titulo{font-size:clamp(1rem,4.2vw,1.2rem);font-weight:800;line-height:1.15}
+.topo-dir{margin-left:auto;display:flex;align-items:center;gap:8px}
+.topo-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:9px;padding:7px 12px;font-size:.85rem;font-weight:600}
+.conexao{font-size:.75rem;color:var(--menta);margin-top:2px}
+.conexao.off{color:#FFD2CC}
+
+main{padding:16px 16px calc(90px + var(--safe-b));max-width:980px;margin:0 auto}
+.painel{display:none}.painel.on{display:block}
+.bloco{background:var(--sup);border:1px solid var(--linha);border-radius:var(--r);padding:16px;margin-bottom:14px}
+.bloco h2{font-size:1.05rem;margin-bottom:12px}
+.bloco h3{font-size:.95rem;margin:14px 0 8px}
+
+/* início */
+.tarefa{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--linha);padding:12px 2px}
+.tarefa:last-child{border-bottom:none}
+.tarefa b{font-size:1.5rem;min-width:44px;text-align:center;color:var(--navy)}
+.tarefa.alerta b{color:var(--rej)}
+.tarefa span{flex:1}
+.tarefa small{display:block;color:var(--suave);font-size:.82rem}
+.tarefa::after{content:"";width:9px;height:9px;border-right:2px solid var(--suave);border-top:2px solid var(--suave);transform:rotate(45deg)}
+.frota-barra{display:flex;height:22px;border-radius:11px;overflow:hidden;background:var(--linha);margin:6px 0 12px}
+.frota-barra i{display:block;height:100%}
+.legenda{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.legenda button{display:flex;align-items:center;gap:8px;border:1px solid var(--linha);background:#fff;border-radius:10px;padding:8px 10px;font-size:.88rem;text-align:left}
+.legenda button i{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+.legenda button b{margin-left:auto}
+.numeros{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.numeros div{border:1px solid var(--linha);border-radius:12px;padding:10px 12px}
+.numeros b{font-size:1.3rem;color:var(--navy);display:block}
+.numeros span{font-size:.84rem;color:var(--suave)}
+
+/* listas e filtros */
+.barra-filtro{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.barra-filtro input[type=search]{flex:1 1 220px}
+.barra-filtro select{flex:0 1 220px}
+.filtros{display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px}
+.chip{flex-shrink:0;border:1.5px solid var(--linha);background:#fff;border-radius:20px;padding:7px 13px;font-size:.86rem;font-weight:600;color:var(--suave)}
+.chip.on{border-color:var(--navy);color:var(--navy);background:var(--ent-bg)}
+.chip em{font-style:normal;margin-left:4px;opacity:.75}
+.cartao-lista{background:var(--sup);border:1px solid var(--linha);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.cl-topo{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.cl-titulo{font-weight:800;font-size:1.02rem}
+.cl-meta{font-size:.84rem;color:var(--suave);margin-top:2px}
+.selos{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.selo{font-size:.76rem;font-weight:700;border-radius:20px;padding:4px 10px;white-space:nowrap}
+.s-Pendente{background:var(--pend-bg);color:var(--pend)}
+.s-Aprovado,.s-Em-andamento,.s-EM-OBRA{background:var(--ok-bg);color:var(--ok)}
+.s-Parcial,.s-MANUTENCAO,.s-EM-CONSERTO{background:var(--parc-bg);color:var(--parc)}
+.s-Rejeitado,.s-Recusado,.s-FURTADO,.s-atraso,.s-Critico{background:var(--rej-bg);color:var(--rej)}
+.s-Entregue,.s-ESCRITORIO{background:var(--ent-bg);color:var(--ent)}
+.s-Devolvido,.s-Concluido,.s-BAIXADO{background:var(--dev-bg);color:var(--dev)}
+.s-PENDENTE-PROCURAR,.s-Urgente{background:var(--pend-bg);color:var(--pend)}
+.itens{margin-top:10px}
+.item{display:flex;justify-content:space-between;gap:10px;font-size:.9rem;padding:6px 0;border-top:1px dashed var(--linha)}
+.item small{color:var(--suave)}
+.st-Aprovado{color:var(--ok);font-weight:600}.st-Rejeitado{color:var(--rej);font-weight:600}.st-Pendente{color:var(--pend)}
+.datas{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:.85rem;color:var(--suave)}
+.datas b{color:var(--texto)}
+.datas .atraso b{color:var(--rej)}
+.nota{margin-top:10px;background:var(--fundo);border-left:3px solid var(--teal);border-radius:0 10px 10px 0;padding:9px 12px;font-size:.88rem}
+
+.tabela{width:100%;border-collapse:collapse;font-size:.9rem}
+.tabela td,.tabela th{padding:9px 6px;border-bottom:1px solid var(--linha);text-align:left;vertical-align:top}
+.tabela th{font-size:.8rem;color:var(--suave);font-weight:600}
+.linha-ferr{cursor:pointer}
+.linha-ferr:active{background:var(--fundo)}
+.cod{font-weight:800;color:var(--navy);white-space:nowrap}
+.rolar{overflow-x:auto}
+.mais{display:block;margin:10px auto 0}
+
+details.obra{background:var(--sup);border:1px solid var(--linha);border-radius:var(--r);margin-bottom:10px}
+details.obra summary{list-style:none;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer}
+details.obra summary::-webkit-details-marker{display:none}
+details.obra summary b{flex:1;font-size:1.02rem}
+details.obra summary .cont{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+details.obra summary .cont span{font-size:.78rem;background:var(--fundo);border-radius:14px;padding:3px 9px;color:var(--suave)}
+details.obra summary .cont span.al{background:var(--rej-bg);color:var(--rej)}
+details.obra[open] summary{border-bottom:1px solid var(--linha)}
+details.obra .dentro{padding:4px 14px 14px}
+
+/* modal */
+#modal{position:fixed;inset:0;background:rgba(28,43,54,.55);z-index:100;display:flex;align-items:flex-end;justify-content:center}
+#modal .caixa{background:var(--sup);width:100%;max-width:640px;max-height:92vh;overflow-y:auto;border-radius:18px 18px 0 0;padding:18px 18px calc(18px + var(--safe-b))}
+@media (min-width:700px){#modal{align-items:center}#modal .caixa{border-radius:18px}}
+#modal h2{font-size:1.15rem;margin-bottom:4px}
+#modal .sub{color:var(--suave);font-size:.9rem;margin-bottom:14px}
+.linha-aprov{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--linha);flex-wrap:wrap}
+.entrega-linha{padding:10px 0;border-bottom:1px solid var(--linha)}
+.entrega-topo{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.entrega-campos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.entrega-campos .um{grid-column:1/-1}
+.entrega-linha input{min-height:42px}
+.entrega-linha input.cod{text-transform:uppercase;text-align:center;font-weight:700}
+.selo-tipo{font-size:.72rem;font-weight:700;border-radius:20px;padding:2px 8px;white-space:nowrap}
+.t-EICES{background:var(--ok-bg);color:var(--ok)}
+.t-LOCADO{background:var(--pend-bg);color:var(--pend)}
+.entrega-linha input{text-transform:uppercase;text-align:center;font-weight:700;min-height:42px}
+.entrega-linha .msg{grid-column:1/-1;font-size:.8rem;color:var(--rej)}
+.ficha-grade{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 14px;font-size:.9rem}
+.ficha-grade span{display:block;color:var(--suave);font-size:.78rem}
+.hist{font-size:.86rem;border-left:2px solid var(--linha);margin-left:6px;padding-left:12px}
+.hist div{padding:6px 0;position:relative}
+.hist div::before{content:"";position:absolute;left:-18px;top:11px;width:10px;height:10px;border-radius:50%;background:var(--teal)}
+.hist small{color:var(--suave);display:block}
+
+.vazio{text-align:center;padding:30px 16px;color:var(--suave)}
+.vazio img{width:80px;opacity:.18;margin-bottom:10px;filter:grayscale(1)}
+.vazio b{display:block;color:var(--texto);margin-bottom:4px}
+
+nav.baixo{position:fixed;left:0;right:0;bottom:0;background:var(--sup);border-top:1px solid var(--linha);display:flex;padding-bottom:var(--safe-b);z-index:30}
+nav.baixo button{flex:1;border:none;background:none;padding:9px 2px 11px;font-size:.74rem;font-weight:600;color:var(--suave);display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;min-height:60px}
+nav.baixo svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.8}
+nav.baixo button.on{color:var(--acao)}
+nav.baixo .num{position:absolute;top:5px;left:calc(50% + 6px);background:var(--rej);color:#fff;font-size:.68rem;border-radius:10px;padding:0 5px;min-width:17px;line-height:17px}
+
+#carregando{position:fixed;inset:0;background:rgba(47,77,101,.9);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#fff}
+#carregando img{width:84px;border-radius:18px;animation:pulsa 1.2s ease-in-out infinite}
+@keyframes pulsa{50%{transform:scale(.9);opacity:.7}}
+footer.rodape{text-align:center;font-size:.72rem;color:var(--suave);padding:18px 16px 4px}
+#aviso{position:fixed;left:50%;bottom:calc(84px + var(--safe-b));transform:translateX(-50%);background:var(--texto);color:#fff;padding:12px 18px;border-radius:12px;font-size:.92rem;z-index:300;max-width:calc(100% - 32px);text-align:center;opacity:0;transition:opacity .25s;pointer-events:none}
+#aviso.on{opacity:1}
+#aviso.erro{background:var(--rej)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div id="abertura"><img src="eices-logo.png" alt="EICES" onerror="this.classList.add('logo-falha')"></div>
+
+<section id="tela-login" class="escondido">
+  <div class="login-topo"><img src="eices-logo.png" alt="EICES Engenharia, Instalações, Consultoria e Soluções Energéticas" onerror="this.classList.add('logo-falha')"></div>
+  <div class="login-corpo">
+    <form class="cartao" id="form-login" novalidate>
+      <h1>Controle de ferramentas</h1>
+      <p class="sub">Acesso restrito à equipe de controle da EICES.</p>
+      <div class="erro-box escondido" id="login-erro"></div>
+      <div class="campo">
+        <label for="login-senha">Senha de controle <span class="obr">*</span></label>
+        <input type="password" id="login-senha" autocomplete="current-password">
+      </div>
+      <label class="check"><input type="checkbox" id="login-lembrar" checked> Manter conectado neste aparelho</label>
+      <button class="btn cheio" type="submit" id="btn-entrar">Entrar</button>
+    </form>
+    <footer class="rodape">EICES · Engenharia, Instalações, Consultoria e Soluções Energéticas</footer>
+  </div>
+</section>
+
+<section id="tela-app" class="escondido">
+  <header class="topo">
+    <svg class="arco" viewBox="0 0 400 120" aria-hidden="true"><path d="M20 118 A180 110 0 0 1 380 118" stroke="#A9D3C4" stroke-width="3" fill="none"/></svg>
+    <div class="topo-linha">
+      <img src="eices-marca.png" alt="" onerror="this.classList.add('logo-falha')">
+      <div>
+        <div class="topo-marca">EICES</div>
+        <div class="topo-titulo">Controle de ferramentas</div>
+        <div class="conexao" id="conexao">Conectando</div>
+      </div>
+      <div class="topo-dir">
+        <button class="topo-btn" id="btn-atualizar" type="button">Atualizar</button>
+        <button class="topo-btn" id="btn-sair" type="button">Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="painel on" id="p-inicio"></div>
+
+    <div class="painel" id="p-pedidos">
+      <div class="barra-filtro">
+        <input type="search" id="ped-busca" placeholder="Buscar por obra, nome ou protocolo">
+        <select id="ped-obra"></select>
+      </div>
+      <div class="filtros" id="ped-filtros"></div>
+      <div id="ped-lista"></div>
+    </div>
+
+    <div class="painel" id="p-ferr">
+      <div class="barra-filtro">
+        <input type="search" id="fer-busca" placeholder="Código, ferramenta, marca ou série">
+        <select id="fer-obra"></select>
+      </div>
+      <div class="filtros" id="fer-filtros"></div>
+      <div class="bloco" style="padding:6px 12px"><div class="rolar"><table class="tabela" id="fer-tabela"></table></div></div>
+    </div>
+
+    <div class="painel" id="p-obras">
+      <div class="barra-filtro"><input type="search" id="obr-busca" placeholder="Buscar obra"></div>
+      <div id="obr-lista"></div>
+    </div>
+
+    <div class="painel" id="p-manut">
+      <div class="filtros" id="man-filtros"></div>
+      <div id="man-lista"></div>
+      <div class="bloco" id="man-conserto"></div>
+    </div>
+
+    <footer class="rodape">EICES · Engenharia, Instalações, Consultoria e Soluções Energéticas</footer>
+  </main>
+
+  <nav class="baixo">
+    <button class="on" data-ir="inicio" type="button"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Início</button>
+    <button data-ir="pedidos" type="button"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>Pedidos<span class="num escondido" id="num-ped"></span></button>
+    <button data-ir="ferr" type="button"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg>Ferramentas</button>
+    <button data-ir="obras" type="button"><svg viewBox="0 0 24 24"><path d="M4 21V9l6-4v16M10 21V3l10 5v13M2 21h20M14 11h2M14 15h2"/></svg>Obras</button>
+    <button data-ir="manut" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Manutenção<span class="num escondido" id="num-man"></span></button>
+  </nav>
+</section>
+
+<div id="modal" class="escondido"><div class="caixa" id="modal-caixa" role="dialog" aria-modal="true"></div></div>
+<div id="carregando" class="escondido"><img src="eices-icone-192.png" alt="" onerror="this.classList.add('logo-falha')"><div id="carregando-txt">Salvando…</div></div>
+<div id="aviso" role="status" aria-live="polite"></div>
+<datalist id="dl-codigos"></datalist>
+<datalist id="dl-destinos"></datalist>
+<datalist id="dl-fornecedores"></datalist>
+
+<script>
+// ══ CONFIGURAÇÃO ═══════════════════════════════════════════════
+const API = 'https://script.google.com/macros/s/AKfycbzi3rXXap4Ariyam8VkwVSaN6FicwGUUQ-VaaYFIEnwVeL-Vr6IkFBX6e3Xf_HwdJ9dvQ/exec';
+const FORNECEDORES = ['ONIX','IMPACTO','INOVATRI','OLUAP','STOCK TOTAL','RADIO WAY','ALTOP','HALCEPE'];
+const TIPOS_MOV = ['TRANSFERÊNCIA','DEVOLUÇÃO','QUEBRA','FURTO','BAIXA','ENTRADA (NOVA)'];
+const STATUS_FROTA = [
+  {k:'EM OBRA', nome:'Em obra', cor:'#2F9C98'},
+  {k:'ESCRITORIO', nome:'No escritório', cor:'#2F4D65'},
+  {k:'MANUTENÇÃO', nome:'Em conserto', cor:'#D9822B'},
+  {k:'PENDENTE-PROCURAR', nome:'A procurar', cor:'#E3B341'},
+  {k:'FURTADO', nome:'Furtadas', cor:'#B42318'},
+  {k:'BAIXADO', nome:'Baixadas', cor:'#9AA9B3'}
+];
+
+// ══ ESTADO ═════════════════════════════════════════════════════
+let senha = '';
+let pedidos = [];
+let D = {patrimonio:[], movimentacoes:[], manutencoes:[], locados:[], radios:[], obras:[]};
+let pedFiltro = 'Pendente', ferFiltro = 'todas', manFiltro = 'aguardando', ferLimite = 150;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
+const cls = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/[^A-Za-z0-9]+/g, '-');
+const hojeISO = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+const fmt = d => { if (!d) return '—'; const [y,m,dd] = String(d).slice(0,10).split('-'); return dd && m ? `${dd}/${m}/${y}` : d; };
+const fmtHora = iso => { const d = new Date(iso); return isNaN(d) ? '—' : d.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); };
+const dias = d => Math.round((new Date(String(d).slice(0,10) + 'T00:00:00') - new Date(hojeISO() + 'T00:00:00')) / 86400000);
+const sols = () => pedidos.filter(p => p.tipo === 'Solicitação');
+const mans = () => pedidos.filter(p => p.tipo === 'Manutenção');
+const atrasado = p => p.status === 'Entregue' && p.data_devolucao && dias(p.data_devolucao) < 0;
+const patPorCodigo = c => D.patrimonio.find(p => norm(p.codigo) === norm(c));
+const statusFerr = p => (p.status === 'EM OBRA' && norm(p.obra).indexOf('ESCRITORIO') === 0) ? 'ESCRITORIO' : p.status;
+const nomeStatus = k => (STATUS_FROTA.find(s => norm(s.k) === norm(k)) || {nome: k || '—'}).nome;
+
+function aviso(msg, erro) {
+  const a = $('aviso'); a.textContent = msg; a.className = 'on' + (erro ? ' erro' : '');
+  clearTimeout(aviso.t); aviso.t = setTimeout(() => a.className = '', erro ? 5000 : 3000);
+}
+function invalido(el, msg) {
+  el.classList.add('invalido'); el.focus && el.focus();
+  ['input','change'].forEach(ev => el.addEventListener(ev, () => el.classList.remove('invalido'), {once:true}));
+  aviso(msg, true); return false;
+}
+
+// ══ SERVIDOR ═══════════════════════════════════════════════════
+async function api(corpo, ms = 30000) {
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), ms);
+  try {
+    const r = await fetch(API, {method:'POST', body: JSON.stringify(Object.assign({senha}, corpo)), signal: ctl.signal});
+    const j = await r.json(); conexao(true);
+    if (j.status === 'negado') { sair(j.msg); throw new Error(j.msg); }
+    if (j.status !== 'ok') throw new Error(j.msg || 'Erro no servidor');
+    return j;
+  } catch (e) { if (e.name === 'AbortError' || e instanceof TypeError) conexao(false); throw e; }
+  finally { clearTimeout(t); }
+}
+function conexao(ok, txt) {
+  const c = $('conexao'); if (!c) return;
+  c.className = 'conexao' + (ok ? '' : ' off');
+  c.textContent = txt || (ok ? 'Conectado' : 'Sem conexão, mostrando os últimos dados');
+}
+async function salvar(rotulo, fn) {
+  $('carregando-txt').textContent = rotulo; $('carregando').classList.remove('escondido');
+  try { await fn(); return true; }
+  catch (e) { aviso('Não foi possível salvar: ' + (e.message || 'verifique a internet') + '. Nada foi alterado na planilha.', true); return false; }
+  finally { $('carregando').classList.add('escondido'); }
+}
+
+async function carregarTudo(silencioso) {
+  try {
+    const [a, b] = await Promise.all([api({acao:'listar_todas'}), api({acao:'dados_controle'})]);
+    pedidos = a.registros || []; D = b.dados || D;
+    try { localStorage.setItem('eices_ctrl_cache', JSON.stringify({pedidos, D})); } catch (e) {}
+    conexao(true, 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}));
+    renderTudo();
+  } catch (e) { if (!silencioso) aviso('Não foi possível atualizar agora. Mostrando os últimos dados.', true); }
+}
+
+// ══ LOGIN ══════════════════════════════════════════════════════
+$('form-login').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const s = $('login-senha').value.trim(), err = $('login-erro'); err.classList.add('escondido');
+  if (!s) return invalido($('login-senha'), 'Digite a senha de controle');
+  const btn = $('btn-entrar'); btn.disabled = true; btn.textContent = 'Verificando…';
+  try {
+    const r = await fetch(API, {method:'POST', body: JSON.stringify({acao:'login', perfil:'controle', senha: s})});
+    const j = await r.json();
+    if (j.status !== 'ok') { err.textContent = 'Senha incorreta.'; err.classList.remove('escondido'); return; }
+    senha = s;
+    ($('login-lembrar').checked ? localStorage : sessionStorage).setItem('eices_ctrl_sessao', s);
+    abrirApp();
+  } catch (e) { err.textContent = 'Sem conexão com o servidor. Verifique a internet e tente de novo.'; err.classList.remove('escondido'); }
+  finally { btn.disabled = false; btn.textContent = 'Entrar'; }
+});
+function sair(msg) {
+  localStorage.removeItem('eices_ctrl_sessao'); sessionStorage.removeItem('eices_ctrl_sessao'); senha = '';
+  $('tela-app').classList.add('escondido'); $('tela-login').classList.remove('escondido'); $('login-senha').value = '';
+  if (msg) { $('login-erro').textContent = msg; $('login-erro').classList.remove('escondido'); }
+}
+$('btn-sair').addEventListener('click', () => { if (confirm('Sair do controle?')) sair(); });
+$('btn-atualizar').addEventListener('click', () => { conexao(true, 'Atualizando…'); carregarTudo(); });
+
+function abrirApp() {
+  $('tela-login').classList.add('escondido'); $('tela-app').classList.remove('escondido');
+  try { const c = JSON.parse(localStorage.getItem('eices_ctrl_cache') || 'null'); if (c) { pedidos = c.pedidos || []; D = c.D || D; } } catch (e) {}
+  renderTudo(); carregarTudo(true);
+}
+
+// ══ NAVEGAÇÃO ══════════════════════════════════════════════════
+function ir(aba) {
+  document.querySelectorAll('nav.baixo button').forEach(b => b.classList.toggle('on', b.dataset.ir === aba));
+  ['inicio','pedidos','ferr','obras','manut'].forEach(p => $('p-' + p).classList.toggle('on', p === aba));
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('nav.baixo button').forEach(b => b.addEventListener('click', () => ir(b.dataset.ir)));
+
+function listaObras() {
+  const mapa = new Map();
+  const add = (n, tipo) => { if (!n) return; const k = norm(n); if (!mapa.has(k)) mapa.set(k, {nome: String(n).trim(), tipo: tipo || 'OBRA'}); };
+  (D.obras || []).forEach(o => add(o.nome, o.tipo));
+  D.patrimonio.forEach(p => add(p.obra));
+  D.locados.filter(l => l.status === 'ATIVO').forEach(l => add(l.obra));
+  D.radios.filter(r => r.status === 'ATIVO').forEach(r => add(r.obra));
+  pedidos.forEach(p => add(p.obra));
+  return [...mapa.values()].sort((a, b) => (a.tipo === b.tipo ? a.nome.localeCompare(b.nome) : a.tipo === 'OBRA' ? -1 : 1));
+}
+
+function renderTudo() {
+  const obras = listaObras();
+  $('dl-destinos').innerHTML = obras.map(o => `<option value="${esc(o.nome)}">`).join('');
+  $('dl-codigos').innerHTML = D.patrimonio.filter(p => !['BAIXADO','FURTADO'].includes(p.status)).map(p => `<option value="${esc(p.codigo)}">${esc(p.item)}, ${esc(p.obra || 'sem local')}</option>`).join('');
+  const opts = '<option value="">Todas as obras</option>' + obras.map(o => `<option value="${esc(o.nome)}">${esc(o.nome)}</option>`).join('');
+  ['ped-obra','fer-obra'].forEach(id => { const v = $(id).value; $(id).innerHTML = opts; $(id).value = v; });
+  const nP = sols().filter(p => p.status === 'Pendente').length, nM = mans().filter(p => p.status === 'Pendente').length;
+  $('num-ped').textContent = nP; $('num-ped').classList.toggle('escondido', !nP);
+  $('num-man').textContent = nM; $('num-man').classList.toggle('escondido', !nM);
+  renderInicio(); renderPedidos(); renderFerr(); renderObras(); renderManut();
+}
+
+// ══ INÍCIO ═════════════════════════════════════════════════════
+function locAntigas() {
+  return D.locados.filter(l => l.status === 'ATIVO' && l.inicio && -dias(l.inicio) > 90);
+}
+function renderInicio() {
+  const pend = sols().filter(p => p.status === 'Pendente');
+  const crit = pend.filter(p => p.urgencia === 'Crítico').length;
+  const entregar = sols().filter(p => ['Aprovado','Parcial'].includes(p.status)).length;
+  const atr = sols().filter(atrasado).length;
+  const manP = mans().filter(p => p.status === 'Pendente').length;
+  const conserto = D.manutencoes.filter(m => norm(m.status) === 'EM CONSERTO').length;
+  const procurar = D.patrimonio.filter(p => p.status === 'PENDENTE-PROCURAR').length;
+  const tarefas = [
+    {n: pend.length, t:'Pedidos aguardando análise', d: crit ? `${crit} com urgência crítica` : 'Aprove ou recuse cada ferramenta', al: crit > 0, ir:['pedidos','Pendente']},
+    {n: entregar, t:'Aprovados para entregar', d:'Registre a entrega com o código de cada ferramenta', ir:['pedidos','entregar']},
+    {n: atr, t:'Devoluções atrasadas', d:'Ferramentas que já deviam ter voltado', al: atr > 0, ir:['pedidos','atrasados']},
+    {n: manP, t:'Pedidos de manutenção sem resposta', d:'Vindos das obras', ir:['manut','aguardando']},
+    {n: procurar, t:'Ferramentas a procurar', d:'Sem localização conhecida', ir:['ferr','PENDENTE-PROCURAR']},
+    {n: locAntigas().length, t:'Locações para revisar', d:'Ativas há mais de 90 dias, gerando custo', al: true, ir:['obras','']}
+  ].filter(x => x.n > 0);
+  const total = D.patrimonio.length || 1;
+  const cont = k => D.patrimonio.filter(p => norm(statusFerr(p)) === norm(k)).length;
+  const locAtivos = D.locados.filter(l => l.status === 'ATIVO');
+  const radAtivos = D.radios.filter(r => r.status === 'ATIVO');
+  const qtdRad = radAtivos.reduce((s, r) => s + (parseFloat(r.qtd) || 0), 0);
+  $('p-inicio').innerHTML = `
+    <div class="bloco"><h2>Precisa de você</h2>
+      ${tarefas.length ? tarefas.map(x => `<button class="tarefa ${x.al ? 'alerta' : ''}" data-ir="${x.ir[0]}" data-f="${x.ir[1]}"><b>${x.n}</b><span>${x.t}<small>${x.d}</small></span></button>`).join('')
+        : `<div class="vazio"><img src="eices-marca.png" alt="" onerror="this.classList.add('logo-falha')"><b>Tudo em dia</b>Nenhum pedido esperando por você agora.</div>`}
+    </div>
+    <div class="bloco"><h2>Frota EICES: ${D.patrimonio.length} ferramentas</h2>
+      <div class="frota-barra">${STATUS_FROTA.map(s => { const n = cont(s.k); return n ? `<i style="width:${n / total * 100}%;background:${s.cor}" title="${s.nome}: ${n}"></i>` : ''; }).join('')}</div>
+      <div class="legenda">${STATUS_FROTA.map(s => `<button data-ir="ferr" data-f="${s.k}"><i style="background:${s.cor}"></i>${s.nome}<b>${cont(s.k)}</b></button>`).join('')}</div>
+    </div>
+    <div class="bloco"><h2>Nas obras agora</h2>
+      <div class="numeros">
+        <div><b>${listaObras().filter(o => o.tipo === 'OBRA').length}</b><span>obras cadastradas</span></div>
+        <div><b>${locAtivos.length}</b><span>itens locados ativos</span></div>
+        <div><b>${qtdRad}</b><span>rádios nas obras</span></div>
+        <div><b>${conserto}</b><span>ferramentas em conserto</span></div>
+      </div>
+    </div>`;
+  $('p-inicio').querySelectorAll('[data-ir]').forEach(b => b.addEventListener('click', () => {
+    const [aba, f] = [b.dataset.ir, b.dataset.f];
+    if (aba === 'pedidos') pedFiltro = f; if (aba === 'ferr') { ferFiltro = f; ferLimite = 150; } if (aba === 'manut') manFiltro = f;
+    renderTudo(); ir(aba);
+  }));
+}
+
+// ══ PEDIDOS ════════════════════════════════════════════════════
+const FILTROS_PED = [
+  {k:'Pendente', nome:'Aguardando', f: p => p.status === 'Pendente'},
+  {k:'entregar', nome:'Para entregar', f: p => ['Aprovado','Parcial'].includes(p.status)},
+  {k:'Entregue', nome:'Na obra', f: p => p.status === 'Entregue'},
+  {k:'atrasados', nome:'Atrasados', f: atrasado},
+  {k:'fim', nome:'Concluídos', f: p => ['Devolvido','Rejeitado'].includes(p.status)},
+  {k:'todos', nome:'Todos', f: () => true}
+];
+$('ped-filtros').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) { pedFiltro = b.dataset.k; renderPedidos(); } });
+$('ped-busca').addEventListener('input', renderPedidos); $('ped-obra').addEventListener('change', renderPedidos);
+
+function renderPedidos() {
+  const base = sols();
+  $('ped-filtros').innerHTML = FILTROS_PED.map(f => `<button class="chip ${pedFiltro === f.k ? 'on' : ''}" data-k="${f.k}" type="button">${f.nome}<em>${base.filter(f.f).length}</em></button>`).join('');
+  const q = norm($('ped-busca').value), ob = norm($('ped-obra').value);
+  const filtro = (FILTROS_PED.find(f => f.k === pedFiltro) || FILTROS_PED[5]).f;
+  let lista = base.filter(filtro).filter(p => !ob || norm(p.obra) === ob)
+    .filter(p => !q || norm([p.obra, p.solicitante, p.protocolo].join(' ')).includes(q));
+  if (pedFiltro === 'Pendente') { const o = {'Crítico':0, 'Urgente':1}; lista.sort((a, b) => (o[a.urgencia] ?? 2) - (o[b.urgencia] ?? 2)); }
+  $('ped-lista').innerHTML = lista.length ? lista.map(cartaoPedido).join('') :
+    `<div class="vazio"><img src="eices-marca.png" alt="" onerror="this.classList.add('logo-falha')"><b>Nenhum pedido aqui</b>Troque o filtro acima para ver outros pedidos.</div>`;
+}
+function cartaoPedido(p) {
+  const r = p.resposta || {};
+  const rot = {Pendente:'Aguardando', Aprovado:'Aprovado', Parcial:'Aprovado em parte', Rejeitado:'Recusado', Entregue:'Na obra', Devolvido:'Devolvido'}[p.status] || p.status;
+  const urg = p.urgencia && p.urgencia !== 'Normal' ? `<span class="selo s-${cls(p.urgencia)}">${esc(p.urgencia)}</span>` : '';
+  const atr = atrasado(p) ? `<span class="selo s-atraso">Atrasado ${-dias(p.data_devolucao)} d</span>` : '';
+  const itens = (p.ferramentas || []).map(f => `<div class="item"><span>${esc(f.nome)} <small>× ${f.qtd}${f.espec ? ', ' + esc(f.espec) : ''}</small>${origemFerr(f)}</span><span class="st-${esc(f.status)}">${f.status === 'Aprovado' ? 'Aprovada' : f.status === 'Rejeitado' ? 'Recusada' : 'Aguardando'}</span></div>`).join('');
+  const P = esc(p.protocolo);
+  let botoes = '';
+  if (p.status === 'Pendente') botoes = `<button class="btn" onclick="modalAnalisar('${P}')">Analisar pedido</button><button class="btn perigo" onclick="modalRecusar('${P}')">Recusar tudo</button>`;
+  if (['Aprovado','Parcial'].includes(p.status)) botoes = `<button class="btn" onclick="modalEntrega('${P}')">Registrar entrega na obra</button>`;
+  if (p.status === 'Entregue') botoes = `<button class="btn" onclick="modalDevolucao('${P}')">Registrar devolução</button>`;
+  botoes += `<button class="btn sec" onclick="modalEditar('${P}')">Editar</button>`;
+  const nota = (r.obs || r.motivo) ? `<div class="nota">${r.motivo ? '<b>Motivo da recusa:</b> ' : ''}${esc(r.motivo || r.obs)}</div>` : '';
+  const obsSol = p.observacao ? `<div class="nota" style="border-left-color:var(--linha)"><b>Obra disse:</b> ${esc(p.observacao)}</div>` : '';
+  return `<article class="cartao-lista">
+    <div class="cl-topo"><div><div class="cl-titulo">${esc(p.obra)}</div><div class="cl-meta">${esc(p.solicitante || '—')}, ${fmtHora(p.data_solicitacao)}, ${P}</div></div>
+      <div class="selos"><span class="selo s-${cls(p.status)}">${esc(rot)}</span>${urg}${atr}</div></div>
+    <div class="itens">${itens}</div>
+    <div class="datas"><span>Precisa até <b>${fmt(p.data_necessidade)}</b></span><span class="${atrasado(p) ? 'atraso' : ''}">Devolve até <b>${fmt(p.data_devolucao)}</b></span>${r.data_entrega ? `<span>Entrega prevista <b>${fmt(r.data_entrega)}</b></span>` : ''}${r.entregue_em ? `<span>Entregue em <b>${fmt(r.entregue_em)}</b></span>` : ''}</div>
+    ${obsSol}${nota}<div class="acoes">${botoes}</div>
+  </article>`;
+}
+
+// ══ MODAL ══════════════════════════════════════════════════════
+function abrirModal(html) { $('modal-caixa').innerHTML = html; $('modal').classList.remove('escondido'); const f = $('modal-caixa').querySelector('input,select,textarea,button'); f && f.focus(); }
+function fecharModal() { $('modal').classList.add('escondido'); $('modal-caixa').innerHTML = ''; }
+$('modal').addEventListener('click', e => { if (e.target.id === 'modal') fecharModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('modal').classList.contains('escondido')) fecharModal(); });
+function origemFerr(f) {
+  const cods = (f.patrimonio || '').split(',').map(s => s.trim()).filter(Boolean);
+  const locs = f.locados || [];
+  if (!cods.length && !locs.length) return '';
+  return '<br>' + cods.map(x => `<span class="selo-tipo t-EICES">EICES ${esc(x)}</span>`).join(' ')
+    + (cods.length && locs.length ? ' ' : '')
+    + locs.map(l => `<span class="selo-tipo t-LOCADO">Locado ${esc(l.fornecedor)}${l.cod ? ' ' + esc(l.cod) : ''}</span>`).join(' ');
+}
+const pedidoPor = proto => pedidos.find(p => p.protocolo === proto);
+const botoesModal = (ok, fn, perigo) => `<div class="acoes"><button class="btn sec" type="button" onclick="fecharModal()">Cancelar</button><button class="btn ${perigo ? 'perigo' : ''}" type="button" onclick="${fn}">${ok}</button></div>`;
+async function atualizarPedido(p, campos) {
+  await api({acao:'atualizar_solicitacao', protocolo: p.protocolo, campos});
+  Object.assign(p, campos); p.atualizado_em = new Date().toISOString();
+}
+
+function modalAnalisar(proto) {
+  const p = pedidoPor(proto); if (!p) return;
+  abrirModal(`<h2>Analisar pedido</h2><p class="sub">${esc(p.obra)}, pedido de ${esc(p.solicitante)}. Escolha aprovar ou recusar cada ferramenta.</p>
+    ${(p.ferramentas || []).map((f, i) => `<div class="linha-aprov"><div><b>${esc(f.nome)}</b><br><small style="color:var(--suave)">× ${f.qtd}${f.espec ? ', ' + esc(f.espec) : ''}</small></div>
+      <div class="seg" data-i="${i}"><button type="button" class="v-Aprovado" onclick="marcarSeg(this,'Aprovado')">Aprovar</button><button type="button" class="v-Rejeitado" onclick="marcarSeg(this,'Rejeitado')">Recusar</button></div></div>`).join('')}
+    <div class="campo" style="margin-top:14px"><label for="m-data">Entrega prevista na obra <span class="obr">*</span></label><input type="date" id="m-data" min="${hojeISO()}"><div class="dica">Obrigatória quando alguma ferramenta for aprovada.</div></div>
+    <div class="campo"><label for="m-obs">Recado para a obra</label><textarea id="m-obs" placeholder="Ex.: a perfuratriz sai amanhã cedo; o martelete está em conserto"></textarea></div>
+    ${botoesModal('Salvar análise', `salvarAnalise('${esc(proto)}')`)}`);
+}
+function marcarSeg(b, v) { const s = b.parentElement; s.dataset.v = v; s.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); s.classList.remove('invalido'); }
+async function salvarAnalise(proto) {
+  const p = pedidoPor(proto); const segs = [...$('modal-caixa').querySelectorAll('.seg')];
+  const falta = segs.find(s => !s.dataset.v); if (falta) return invalido(falta, 'Escolha aprovar ou recusar em todas as ferramentas');
+  const ferramentas = (p.ferramentas || []).map((f, i) => Object.assign({}, f, {status: segs[i].dataset.v}));
+  const aprov = ferramentas.filter(f => f.status === 'Aprovado').length;
+  if (aprov && !$('m-data').value) return invalido($('m-data'), 'Informe a data prevista de entrega');
+  const status = aprov === ferramentas.length ? 'Aprovado' : aprov ? 'Parcial' : 'Rejeitado';
+  const resposta = Object.assign({}, p.resposta || {}, {data_entrega: $('m-data').value, obs: $('m-obs').value.trim(), data_resposta: new Date().toISOString()});
+  if (status === 'Rejeitado' && !resposta.obs) return invalido($('m-obs'), 'Todas foram recusadas: escreva o motivo no recado');
+  if (status === 'Rejeitado') resposta.motivo = resposta.obs;
+  if (await salvar('Salvando análise…', () => atualizarPedido(p, {status, ferramentas, resposta}))) {
+    fecharModal(); renderTudo(); aviso(status === 'Rejeitado' ? 'Pedido recusado. Ele está em Concluídos.' : (status === 'Aprovado' ? 'Pedido aprovado' : 'Pedido aprovado em parte') + '. Ele está em Para entregar.');
+  }
+}
+function modalRecusar(proto) {
+  const p = pedidoPor(proto); if (!p) return;
+  abrirModal(`<h2>Recusar pedido</h2><p class="sub">${esc(p.obra)}, pedido de ${esc(p.solicitante)}.</p>
+    <div class="campo"><label for="m-motivo">Motivo da recusa <span class="obr">*</span></label><textarea id="m-motivo" placeholder="Ex.: não há perfuratriz disponível até dia 30"></textarea></div>
+    ${botoesModal('Recusar pedido', `salvarRecusa('${esc(proto)}')`, true)}`);
+}
+async function salvarRecusa(proto) {
+  const p = pedidoPor(proto); const m = $('m-motivo').value.trim();
+  if (!m) return invalido($('m-motivo'), 'Escreva o motivo da recusa');
+  const ferramentas = (p.ferramentas || []).map(f => Object.assign({}, f, {status: 'Rejeitado'}));
+  const resposta = Object.assign({}, p.resposta || {}, {motivo: m, obs: m, data_resposta: new Date().toISOString()});
+  if (await salvar('Salvando…', () => atualizarPedido(p, {status: 'Rejeitado', ferramentas, resposta}))) { fecharModal(); renderTudo(); aviso('Pedido recusado'); }
+}
+
+// ── entrega: ferramenta ao lado do código de patrimônio ──
+function modalEntrega(proto) {
+  const p = pedidoPor(proto); if (!p) return;
+  const aprovadas = (p.ferramentas || []).map((f, i) => ({f, i})).filter(x => x.f.status === 'Aprovado');
+  let linhas = '', n = 0;
+  aprovadas.forEach(({f, i}) => {
+    for (let u = 0; u < Math.min(f.qtd || 1, 20); u++) {
+      const id = n++;
+      linhas += `<div class="entrega-linha" data-id="${id}" data-i="${i}">
+        <div class="entrega-topo"><div><b>${esc(f.nome)}</b>${f.qtd > 1 ? ` <small style="color:var(--suave)">unidade ${u + 1} de ${f.qtd}</small>` : ''}${f.espec ? `<br><small style="color:var(--suave)">${esc(f.espec)}</small>` : ''}</div>
+          <div class="seg" data-v="EICES"><button type="button" onclick="tipoEntrega(this,'EICES')" class="on">Própria</button><button type="button" onclick="tipoEntrega(this,'LOCADO')">Locada</button></div></div>
+        <div class="entrega-campos">
+          <div class="um" data-c="EICES"><input type="text" class="cod" list="dl-codigos" placeholder="Código de patrimônio" autocomplete="off" oninput="this.value=this.value.toUpperCase();conferirCodigo(this)"></div>
+          <div data-c="LOCADO" class="escondido"><input type="text" class="forn" list="dl-fornecedores" placeholder="Locadora" autocomplete="off" oninput="this.value=this.value.toUpperCase()"></div>
+          <div data-c="LOCADO" class="escondido"><input type="text" class="codloc" placeholder="Código da locadora" autocomplete="off"></div>
+        </div><div class="msg"></div></div>`;
+    }
+  });
+  abrirModal(`<h2>Registrar entrega na obra</h2><p class="sub">${esc(p.obra)}, para ${esc(p.solicitante)}. Para cada ferramenta, diga se é própria da EICES ou locada. A própria vira movimentação no Patrimônio; a locada entra na aba Locado desta obra.</p>
+    ${linhas}
+    <div class="lado" style="margin-top:14px"><div class="campo"><label for="m-data">Data da entrega <span class="obr">*</span></label><input type="date" id="m-data" value="${hojeISO()}"></div>
+      <div class="campo"><label for="m-resp">Recebido por <span class="obr">*</span></label><input type="text" id="m-resp" value="${esc(p.solicitante || '')}"></div></div>
+    <div class="dica" style="margin:-4px 0 12px">Se a própria estiver sem etiqueta, pode deixar o código em branco: ela é marcada como entregue, mas fica fora do controle de patrimônio.</div>
+    ${botoesModal('Confirmar entrega', `salvarEntrega('${esc(proto)}')`)}`);
+  $('dl-fornecedores').innerHTML = [...new Set(FORNECEDORES.concat(D.locados.map(l => l.fornecedor)).filter(Boolean).map(s => s.toUpperCase()))].sort().map(f => `<option value="${esc(f)}">`).join('');
+}
+function tipoEntrega(btn, tipo) {
+  const seg = btn.parentElement, linha = seg.closest('.entrega-linha');
+  seg.dataset.v = tipo; seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === btn));
+  linha.querySelectorAll('[data-c]').forEach(d => d.classList.toggle('escondido', d.dataset.c !== tipo));
+  linha.querySelector('.msg').textContent = '';
+  const alvo = linha.querySelector(tipo === 'EICES' ? '.cod' : '.forn'); alvo && alvo.focus();
+}
+function conferirCodigo(inp) {
+  const msg = inp.closest('.entrega-linha').querySelector('.msg'); const c = inp.value.trim(); inp.classList.remove('invalido');
+  if (!c) { msg.textContent = ''; return true; }
+  const pat = patPorCodigo(c);
+  if (!pat) { msg.textContent = 'Código não encontrado no Patrimônio. Se for ferramenta alugada, marque Locada.'; return false; }
+  if (['BAIXADO','FURTADO'].includes(pat.status)) { msg.textContent = `${pat.codigo} está ${nomeStatus(pat.status).toLowerCase()} e não pode ser entregue.`; return false; }
+  msg.style.color = pat.status === 'MANUTENÇÃO' ? 'var(--parc)' : 'var(--suave)';
+  msg.textContent = `${pat.item}, hoje em ${pat.obra || 'local desconhecido'}${pat.status === 'MANUTENÇÃO' ? ' (consta em conserto)' : ''}`;
+  return true;
+}
+async function salvarEntrega(proto) {
+  const p = pedidoPor(proto); const linhas = [...$('modal-caixa').querySelectorAll('.entrega-linha')];
+  const data = $('m-data').value, resp = $('m-resp').value.trim();
+  if (!data) return invalido($('m-data'), 'Informe a data da entrega');
+  if (!resp) return invalido($('m-resp'), 'Informe quem recebeu');
+  const vistos = new Set(); const proprias = {}, locadas = {}; let semCodigo = 0;
+  for (const L of linhas) {
+    const i = L.dataset.i, tipo = L.querySelector('.seg').dataset.v;
+    if (tipo === 'EICES') {
+      const inp = L.querySelector('.cod'), v = inp.value.trim().toUpperCase();
+      if (!v) { semCodigo++; continue; }
+      if (!conferirCodigo(inp)) return invalido(inp, L.querySelector('.msg').textContent);
+      if (vistos.has(v)) return invalido(inp, 'Código repetido: ' + v);
+      vistos.add(v); (proprias[i] = proprias[i] || []).push(v);
+    } else {
+      const forn = L.querySelector('.forn'), cod = L.querySelector('.codloc');
+      if (!forn.value.trim()) return invalido(forn, 'Informe a locadora desta ferramenta');
+      (locadas[i] = locadas[i] || []).push({fornecedor: forn.value.trim().toUpperCase(), cod: cod.value.trim().toUpperCase()});
+    }
+  }
+  if (semCodigo && !confirm(`${semCodigo} ferramenta(s) própria(s) sem código. Elas não entram no controle de patrimônio. Confirmar mesmo assim?`)) return;
+  const ferramentas = (p.ferramentas || []).map(f => Object.assign({}, f));
+  Object.keys(proprias).forEach(i => ferramentas[i].patrimonio = proprias[i].join(', '));
+  const itensMov = [];
+  Object.keys(proprias).forEach(i => proprias[i].forEach(codigo => itensMov.push({codigo, destino: p.obra, tipo: 'TRANSFERÊNCIA', responsavel: resp, data, obs: 'Entrega do pedido ' + p.protocolo})));
+  const itensLoc = [];
+  Object.keys(locadas).forEach(i => locadas[i].forEach(l => itensLoc.push({fornecedor: l.fornecedor, cod_locadora: l.cod, categoria: ferramentas[i].nome, item: ferramentas[i].nome, obra: p.obra, qtd: 1, inicio: data, obs: 'Entrega do pedido ' + p.protocolo})));
+  const resposta = Object.assign({}, p.resposta || {}, {entregue_em: data, recebido_por: resp});
+  const ok = await salvar('Registrando entrega…', async () => {
+    if (itensMov.length) await api({acao:'movimentar', itens: itensMov});
+    if (itensLoc.length) {
+      const r = await api({acao:'locado_novo', itens: itensLoc});
+      const ls = r.linhas || []; let k = 0;
+      Object.keys(locadas).forEach(i => { ferramentas[i].locados = locadas[i].map(l => Object.assign({}, l, {linha: ls[k++]})); });
+    }
+    await atualizarPedido(p, {status: 'Entregue', ferramentas, resposta});
+  });
+  if (ok) { fecharModal(); aviso('Entrega registrada. Planilha atualizada.'); await carregarTudo(true); renderTudo(); }
+}
+
+function modalDevolucao(proto) {
+  const p = pedidoPor(proto); if (!p) return;
+  const devolvidos = (p.resposta || {}).devolvidos || [];
+  const cods = [], locs = [];
+  (p.ferramentas || []).forEach(f => {
+    (f.patrimonio || '').split(',').map(s => s.trim()).filter(Boolean).forEach(c2 => { if (!devolvidos.includes(c2)) cods.push({c: c2, nome: f.nome}); });
+    (f.locados || []).forEach(l => { const id = 'L' + l.linha; if (l.linha && !devolvidos.includes(id)) locs.push(Object.assign({id, nome: f.nome}, l)); });
+  });
+  abrirModal(`<h2>Registrar devolução</h2><p class="sub">${esc(p.obra)}. Marque o que saiu da obra. As próprias voltam para a EICES e as locadas voltam para a locadora, encerrando a locação.</p>
+    ${cods.length ? `<h3>Ferramentas da EICES</h3>` + cods.map(x => `<label class="check" style="margin:0;padding:10px 0;border-bottom:1px solid var(--linha);color:var(--texto)"><input type="checkbox" class="m-dev" value="${esc(x.c)}" checked> <b>${esc(x.c)}</b> ${esc((patPorCodigo(x.c) || {}).item || x.nome)}</label>`).join('') : ''}
+    ${locs.length ? `<h3>Locadas</h3>` + locs.map(l => `<label class="check" style="margin:0;padding:10px 0;border-bottom:1px solid var(--linha);color:var(--texto)"><input type="checkbox" class="m-dev-loc" value="${esc(l.id)}" data-linha="${l.linha}" checked> <b>${esc(l.fornecedor)}</b> ${esc(l.nome)}${l.cod ? ', cód. ' + esc(l.cod) : ''}</label>`).join('') : ''}
+    ${!cods.length && !locs.length ? '<p class="sub">Este pedido não tem ferramenta registrada com código nem locação. A devolução só muda o status do pedido.</p>' : ''}
+    <div class="lado" style="margin-top:14px"><div class="campo"><label for="m-dest">Próprias voltam para <span class="obr">*</span></label><input type="text" id="m-dest" list="dl-destinos" value="ESCRITÓRIO"></div>
+      <div class="campo"><label for="m-data">Data <span class="obr">*</span></label><input type="date" id="m-data" value="${hojeISO()}"></div></div>
+    <div class="campo"><label for="m-obs">Observação</label><input type="text" id="m-obs" placeholder="Ex.: voltou sem a maleta"></div>
+    ${botoesModal('Confirmar devolução', `salvarDevolucao('${esc(proto)}')`)}`);
+}
+async function salvarDevolucao(proto) {
+  const p = pedidoPor(proto); const dest = $('m-dest').value.trim(), data = $('m-data').value;
+  if (!dest) return invalido($('m-dest'), 'Informe para onde as próprias voltam');
+  if (!data) return invalido($('m-data'), 'Informe a data');
+  const cxP = [...$('modal-caixa').querySelectorAll('.m-dev')], cxL = [...$('modal-caixa').querySelectorAll('.m-dev-loc')];
+  const marcadasP = cxP.filter(x => x.checked), marcadasL = cxL.filter(x => x.checked);
+  if ((cxP.length + cxL.length) && !(marcadasP.length + marcadasL.length)) return aviso('Marque pelo menos uma ferramenta que saiu da obra', true);
+  const obs = $('m-obs').value.trim() || 'Devolução do pedido ' + p.protocolo;
+  const itens = marcadasP.map(x => ({codigo: x.value, destino: dest, tipo: 'DEVOLUÇÃO', responsavel: p.solicitante || 'EICES', data, obs}));
+  const linhasLoc = marcadasL.map(x => parseInt(x.dataset.linha, 10));
+  const resposta = Object.assign({}, p.resposta || {});
+  resposta.devolvidos = (resposta.devolvidos || []).concat(marcadasP.map(x => x.value)).concat(marcadasL.map(x => x.value));
+  const completo = marcadasP.length === cxP.length && marcadasL.length === cxL.length;
+  if (completo) resposta.devolvido_em = data;
+  const ok = await salvar('Registrando devolução…', async () => {
+    if (itens.length) await api({acao:'movimentar', itens});
+    if (linhasLoc.length) await api({acao:'locado_encerrar', linhas: linhasLoc, data});
+    await atualizarPedido(p, {status: completo ? 'Devolvido' : 'Entregue', resposta});
+  });
+  if (ok) { fecharModal(); aviso(completo ? 'Devolução registrada' + (linhasLoc.length ? ' e locação encerrada' : '') : 'Devolução parcial registrada'); await carregarTudo(true); renderTudo(); }
+}
+
+function modalEditar(proto) {
+  const p = pedidoPor(proto); if (!p) return; const r = p.resposta || {};
+  abrirModal(`<h2>Editar pedido</h2><p class="sub">${esc(p.obra)}, ${esc(p.protocolo)}. Alterar o status aqui não mexe na planilha de patrimônio.</p>
+    <div class="campo"><label for="m-status">Status <span class="obr">*</span></label><select id="m-status">${['Pendente','Aprovado','Parcial','Rejeitado','Entregue','Devolvido'].map(s => `<option ${s === p.status ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
+    <div class="lado"><div class="campo"><label for="m-nec">Precisa até</label><input type="date" id="m-nec" value="${esc(p.data_necessidade || '')}"></div>
+      <div class="campo"><label for="m-dev">Devolve até <span class="obr">*</span></label><input type="date" id="m-dev" value="${esc(p.data_devolucao || '')}"></div></div>
+    <div class="campo"><label for="m-ent">Entrega prevista</label><input type="date" id="m-ent" value="${esc(r.data_entrega || '')}"></div>
+    <div class="campo"><label for="m-obs">Recado para a obra</label><textarea id="m-obs">${esc(r.obs || '')}</textarea></div>
+    ${botoesModal('Salvar alterações', `salvarEdicao('${esc(proto)}')`)}`);
+}
+async function salvarEdicao(proto) {
+  const p = pedidoPor(proto);
+  if (!$('m-dev').value) return invalido($('m-dev'), 'Informe a data de devolução');
+  const resposta = Object.assign({}, p.resposta || {}, {data_entrega: $('m-ent').value, obs: $('m-obs').value.trim(), data_resposta: new Date().toISOString()});
+  const campos = {status: $('m-status').value, data_necessidade: $('m-nec').value, data_devolucao: $('m-dev').value, resposta};
+  if (await salvar('Salvando…', () => atualizarPedido(p, campos))) { fecharModal(); renderTudo(); aviso('Alterações salvas'); }
+}
+
+// ══ FERRAMENTAS (PATRIMÔNIO) ═══════════════════════════════════
+$('fer-filtros').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) { ferFiltro = b.dataset.k; ferLimite = 150; renderFerr(); } });
+$('fer-busca').addEventListener('input', () => { ferLimite = 150; renderFerr(); }); $('fer-obra').addEventListener('change', renderFerr);
+function renderFerr() {
+  const chips = [{k:'todas', nome:'Todas'}].concat(STATUS_FROTA);
+  $('fer-filtros').innerHTML = chips.map(c => `<button class="chip ${norm(ferFiltro) === norm(c.k) ? 'on' : ''}" data-k="${c.k}" type="button">${c.nome}<em>${c.k === 'todas' ? D.patrimonio.length : D.patrimonio.filter(p => norm(statusFerr(p)) === norm(c.k)).length}</em></button>`).join('');
+  const q = norm($('fer-busca').value), ob = norm($('fer-obra').value);
+  const lista = D.patrimonio.filter(p => ferFiltro === 'todas' || norm(statusFerr(p)) === norm(ferFiltro))
+    .filter(p => !ob || norm(p.obra) === ob)
+    .filter(p => !q || norm([p.codigo, p.item, p.categoria, p.marca, p.modelo, p.serie].join(' ')).includes(q));
+  $('fer-tabela').innerHTML = lista.length ? `<thead><tr><th>Código</th><th>Ferramenta</th><th>Onde está</th><th>Situação</th></tr></thead><tbody>` +
+    lista.slice(0, ferLimite).map(p => `<tr class="linha-ferr" onclick="modalFicha('${esc(p.codigo)}')"><td class="cod">${esc(p.codigo)}</td><td>${esc(p.item)}<br><small style="color:var(--suave)">${esc([p.marca, p.modelo].filter(Boolean).join(' '))}</small></td><td>${esc(p.obra || '—')}</td><td><span class="selo s-${cls(statusFerr(p))}">${esc(nomeStatus(statusFerr(p)))}</span></td></tr>`).join('') + '</tbody>'
+    + (lista.length > ferLimite ? `<tfoot><tr><td colspan="4"><button class="btn sec mais" onclick="ferLimite+=150;renderFerr()">Mostrar mais (${lista.length - ferLimite})</button></td></tr></tfoot>` : '')
+    : `<tbody><tr><td><div class="vazio"><b>Nenhuma ferramenta encontrada</b>Confira o código ou troque o filtro.</div></td></tr></tbody>`;
+}
+function modalFicha(codigo) {
+  const p = patPorCodigo(codigo); if (!p) return;
+  const movs = D.movimentacoes.filter(m => norm(m.codigo) === norm(codigo)).slice().reverse();
+  const cons = D.manutencoes.filter(m => norm(m.codigo) === norm(codigo)).slice().reverse();
+  const emConserto = cons.some(m => norm(m.status) === 'EM CONSERTO');
+  const C = esc(p.codigo);
+  abrirModal(`<h2>${C}, ${esc(p.item)}</h2><p class="sub"><span class="selo s-${cls(statusFerr(p))}">${esc(nomeStatus(statusFerr(p)))}</span> ${p.obra ? 'em ' + esc(p.obra) : 'sem localização'}</p>
+    <div class="ficha-grade">${[['Categoria', p.categoria], ['Marca', p.marca], ['Modelo', p.modelo], ['Nº de série', p.serie], ['Nota fiscal', p.nf], ['Responsável', p.responsavel]].map(([a, b]) => `<div><span>${a}</span>${esc(b || '—')}</div>`).join('')}</div>
+    ${p.obs ? `<div class="nota">${esc(p.obs)}</div>` : ''}
+    <div class="acoes">${['BAIXADO','FURTADO'].includes(p.status) ? '' : `<button class="btn" onclick="formMovimentar('${C}')">Movimentar</button>`}
+      ${emConserto ? `<button class="btn" onclick="formRetorno('${C}')">Registrar retorno do conserto</button>` : ['BAIXADO','FURTADO'].includes(p.status) ? '' : `<button class="btn sec" onclick="formConserto('${C}')">Enviar para conserto</button>`}
+      <button class="btn sec" onclick="fecharModal()">Fechar</button></div>
+    <div id="m-form"></div>
+    <h3 style="margin-top:18px">Por onde passou</h3>
+    ${movs.length ? `<div class="hist">${movs.slice(0, 40).map(m => `<div><b>${esc(m.tipo)}</b> ${esc(m.origem || '—')} para ${esc(m.destino || '—')}<small>${fmt(m.data)}, ${esc(m.responsavel || '')}${m.obs ? ', ' + esc(m.obs) : ''}</small></div>`).join('')}</div>` : '<p class="sub">Sem movimentações registradas.</p>'}
+    ${cons.length ? `<h3>Consertos</h3><div class="hist">${cons.map(m => `<div><b>${esc(m.status)}</b> saiu de ${esc(m.obra || '—')}<small>entrada ${fmt(m.entrada)}${m.retorno ? ', retorno ' + fmt(m.retorno) : ''}${m.obs ? ', ' + esc(m.obs) : ''}</small></div>`).join('')}</div>` : ''}`);
+}
+function formMovimentar(c) {
+  const p = patPorCodigo(c);
+  $('m-form').innerHTML = `<div class="bloco" style="margin-top:14px"><h2>Movimentar ${esc(c)}</h2>
+    <div class="lado"><div class="campo"><label for="f-tipo">Tipo <span class="obr">*</span></label><select id="f-tipo" onchange="$('f-dest-campo').classList.toggle('escondido',['FURTO','BAIXA'].includes(this.value))">${TIPOS_MOV.map(t => `<option>${t}</option>`).join('')}</select></div>
+      <div class="campo"><label for="f-data">Data <span class="obr">*</span></label><input type="date" id="f-data" value="${hojeISO()}"></div></div>
+    <div class="campo" id="f-dest-campo"><label for="f-dest">Destino <span class="obr">*</span></label><input type="text" id="f-dest" list="dl-destinos" value="${esc(p.obra || '')}"><div class="dica">Hoje está em ${esc(p.obra || 'local desconhecido')}.</div></div>
+    <div class="lado"><div class="campo"><label for="f-resp">Responsável <span class="obr">*</span></label><input type="text" id="f-resp" value="EICES"></div>
+      <div class="campo"><label for="f-obs">Observação</label><input type="text" id="f-obs"></div></div>
+    <button class="btn cheio" onclick="salvarMov('${esc(c)}')">Gravar movimentação</button></div>`;
+  $('f-dest').select();
+}
+async function salvarMov(c) {
+  const tipo = $('f-tipo').value, semDestino = ['FURTO','BAIXA'].includes(tipo), dest = semDestino ? '' : $('f-dest').value.trim();
+  if (!semDestino && !dest) return invalido($('f-dest'), 'Informe o destino');
+  if (!$('f-data').value) return invalido($('f-data'), 'Informe a data');
+  if (!$('f-resp').value.trim()) return invalido($('f-resp'), 'Informe o responsável');
+  if (semDestino && !confirm(`Registrar ${tipo} de ${c}? A ferramenta sai da frota ativa.`)) return;
+  const ok = await salvar('Gravando movimentação…', () => api({acao:'movimentar', itens:[{codigo: c, destino: dest, tipo, responsavel: $('f-resp').value.trim(), data: $('f-data').value, obs: $('f-obs').value.trim()}]}));
+  if (ok) { fecharModal(); aviso('Movimentação gravada na planilha'); await carregarTudo(true); }
+}
+function formConserto(c, obs) {
+  $('m-form').innerHTML = `<div class="bloco" style="margin-top:14px"><h2>Enviar ${esc(c)} para conserto</h2>
+    <div class="campo"><label for="f-data">Data de entrada <span class="obr">*</span></label><input type="date" id="f-data" value="${hojeISO()}"></div>
+    <div class="campo"><label for="f-obs">Defeito <span class="obr">*</span></label><input type="text" id="f-obs" value="${esc(obs || '')}"></div>
+    <button class="btn cheio" onclick="salvarConserto('${esc(c)}')">Enviar para conserto</button></div>`;
+}
+async function salvarConserto(c) {
+  if (!$('f-data').value) return invalido($('f-data'), 'Informe a data');
+  if (!$('f-obs').value.trim()) return invalido($('f-obs'), 'Descreva o defeito');
+  const ok = await salvar('Registrando conserto…', () => api({acao:'manutencao_enviar', codigo: c, data: $('f-data').value, obs: $('f-obs').value.trim()}));
+  if (ok) { fecharModal(); aviso(c + ' registrada em conserto'); await carregarTudo(true); }
+}
+function formRetorno(c) {
+  const alvo = $('m-form') ? 'm-form' : null;
+  const html = `<div class="bloco" style="margin-top:14px"><h2>Retorno do conserto: ${esc(c)}</h2>
+    <div class="campo"><label for="f-res">Resultado <span class="obr">*</span></label><select id="f-res" onchange="$('f-dest-campo').classList.toggle('escondido',this.value==='BAIXA')"><option value="VOLTOU">Consertada, voltou</option><option value="BAIXA">Sem conserto, dar baixa</option></select></div>
+    <div class="campo" id="f-dest-campo"><label for="f-dest">Vai para <span class="obr">*</span></label><input type="text" id="f-dest" list="dl-destinos" value="ESCRITÓRIO"></div>
+    <div class="lado"><div class="campo"><label for="f-data">Data <span class="obr">*</span></label><input type="date" id="f-data" value="${hojeISO()}"></div>
+      <div class="campo"><label for="f-obs">Observação</label><input type="text" id="f-obs"></div></div>
+    <button class="btn cheio" onclick="salvarRetorno('${esc(c)}')">Registrar retorno</button></div>`;
+  if (alvo) $('m-form').innerHTML = html; else abrirModal(html + botoesModal('Fechar', 'fecharModal()'));
+}
+async function salvarRetorno(c) {
+  const res = $('f-res').value, dest = $('f-dest').value.trim();
+  if (res === 'VOLTOU' && !dest) return invalido($('f-dest'), 'Informe para onde a ferramenta vai');
+  if (!$('f-data').value) return invalido($('f-data'), 'Informe a data');
+  const ok = await salvar('Registrando retorno…', () => api({acao:'manutencao_retorno', codigo: c, resultado: res, destino: dest, data: $('f-data').value, obs: $('f-obs').value.trim()}));
+  if (ok) { fecharModal(); aviso(res === 'BAIXA' ? c + ' baixada' : c + ' voltou do conserto'); await carregarTudo(true); }
+}
+
+// ══ OBRAS ══════════════════════════════════════════════════════
+$('obr-busca').addEventListener('input', renderObras);
+function renderObras() {
+  const q = norm($('obr-busca').value); const abertas = new Set([...$('obr-lista').querySelectorAll('details[open]')].map(d => d.dataset.k));
+  const html = listaObras().filter(o => !q || norm(o.nome).includes(q)).map(o => {
+    const k = norm(o.nome);
+    const pr = D.patrimonio.filter(p => norm(p.obra) === k && !['BAIXADO','FURTADO'].includes(p.status));
+    const lc = D.locados.filter(l => l.status === 'ATIVO' && norm(l.obra) === k);
+    const rd = D.radios.filter(r => r.status === 'ATIVO' && norm(r.obra) === k);
+    const pd = sols().filter(p => norm(p.obra) === k && ['Pendente','Aprovado','Parcial','Entregue'].includes(p.status));
+    const at = pd.filter(atrasado).length;
+    const qtdRad = rd.reduce((s, r) => s + (parseFloat(r.qtd) || 0), 0);
+    return `<details class="obra" data-k="${esc(k)}" ${abertas.has(k) ? 'open' : ''}><summary><b>${esc(o.nome)}</b><div class="cont">
+        <span>${pr.length} EICES</span><span>${lc.length} locados</span>${qtdRad ? `<span>${qtdRad} rádios</span>` : ''}${pd.length ? `<span>${pd.length} pedidos</span>` : ''}${at ? `<span class="al">${at} atrasado${at > 1 ? 's' : ''}</span>` : ''}${lc.filter(l => l.inicio && -dias(l.inicio) > 90).length ? `<span class="al">locação antiga</span>` : ''}</div></summary>
+      <div class="dentro">
+        <h3>Ferramentas EICES</h3>
+        ${pr.length ? `<table class="tabela">${pr.map(p => `<tr class="linha-ferr" onclick="modalFicha('${esc(p.codigo)}')"><td class="cod">${esc(p.codigo)}</td><td>${esc(p.item)}</td><td>${p.status === 'MANUTENÇÃO' ? '<span class="selo s-MANUTENCAO">Em conserto</span>' : ''}</td></tr>`).join('')}</table>` : '<p class="sub">Nenhuma ferramenta própria nesta obra.</p>'}
+        <h3>Locados ativos</h3>
+        ${lc.length ? `<table class="tabela">${lc.map(l => `<tr><td>${esc(l.item)}<br><small style="color:var(--suave)">${esc(l.fornecedor)}${l.cod_locadora ? ', cód. ' + esc(l.cod_locadora) : ''}</small></td><td>${esc(l.qtd || '')} un.<br><small style="color:${l.inicio && -dias(l.inicio) > 90 ? 'var(--rej)' : 'var(--suave)'}">desde ${fmt(l.inicio)}${l.inicio ? ', ' + -dias(l.inicio) + ' dias' : ''}</small></td><td><button class="btn sec" style="min-height:36px;padding:6px 10px;font-size:.82rem" onclick="modalEncerrar(${l.linha})">Encerrar</button></td></tr>`).join('')}</table>` : '<p class="sub">Nenhum item locado ativo.</p>'}
+        ${rd.length ? `<h3>Rádios</h3><table class="tabela">${rd.map(r => `<tr><td>${esc(r.locadora)}</td><td>${esc(r.qtd)} un.</td><td><small style="color:var(--suave)">desde ${fmt(r.inicio)}</small></td></tr>`).join('')}</table>` : ''}
+        ${pd.length ? `<h3>Pedidos em andamento</h3>${pd.map(p => `<div class="item"><span>${esc(p.protocolo)} <small>${esc(p.solicitante || '')}</small></span><span class="selo s-${atrasado(p) ? 'atraso' : cls(p.status)}">${atrasado(p) ? 'Atrasado' : esc(p.status)}</span></div>`).join('')}` : ''}
+      </div></details>`;
+  }).join('');
+  $('obr-lista').innerHTML = html || `<div class="vazio"><b>Nenhuma obra encontrada</b>Confira o nome digitado.</div>`;
+}
+function modalEncerrar(linha) {
+  const l = D.locados.find(x => x.linha === linha); if (!l) return;
+  abrirModal(`<h2>Encerrar locação</h2><p class="sub">${esc(l.item)}, ${esc(l.fornecedor)}, obra ${esc(l.obra)}. Registre quando o item foi devolvido à locadora.</p>
+    <div class="campo"><label for="m-data">Data da devolução à locadora <span class="obr">*</span></label><input type="date" id="m-data" value="${hojeISO()}"></div>
+    ${botoesModal('Encerrar locação', `salvarEncerrar(${linha})`)}`);
+}
+async function salvarEncerrar(linha) {
+  if (!$('m-data').value) return invalido($('m-data'), 'Informe a data');
+  const ok = await salvar('Encerrando locação…', () => api({acao:'locado_encerrar', linhas: [linha], data: $('m-data').value}));
+  if (ok) { fecharModal(); aviso('Locação encerrada na planilha'); await carregarTudo(true); }
+}
+
+// ══ MANUTENÇÃO ═════════════════════════════════════════════════
+$('man-filtros').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) { manFiltro = b.dataset.k; renderManut(); } });
+function renderManut() {
+  const base = mans();
+  const f = {aguardando: p => p.status === 'Pendente', andamento: p => p.status === 'Em andamento', todos: () => true};
+  $('man-filtros').innerHTML = [['aguardando','Aguardando resposta'],['andamento','Em andamento'],['todos','Todos']].map(([k, n]) => `<button class="chip ${manFiltro === k ? 'on' : ''}" data-k="${k}" type="button">${n}<em>${base.filter(f[k]).length}</em></button>`).join('');
+  const lista = base.filter(f[manFiltro] || f.todos);
+  $('man-lista').innerHTML = lista.length ? lista.map(p => {
+    const r = p.resposta || {}; const P = esc(p.protocolo);
+    return `<article class="cartao-lista"><div class="cl-topo"><div><div class="cl-titulo">${esc(p.ferramenta || p.equipamento || 'Equipamento')}${p.patrimonio ? ', ' + esc(p.patrimonio) : ''}</div><div class="cl-meta">${esc(p.obra)}, ${esc(p.solicitante || '—')}, ${fmtHora(p.data_solicitacao)}</div></div>
+      <div class="selos"><span class="selo s-${cls(p.status)}">${esc(p.status === 'Pendente' ? 'Aguardando' : p.status)}</span>${p.urgencia === 'Alta' ? '<span class="selo s-Critico">Urgência alta</span>' : p.urgencia === 'Média' ? '<span class="selo s-Urgente">Urgência média</span>' : ''}</div></div>
+      <div class="nota" style="border-left-color:var(--linha)">${esc(p.descricao)}<br><small style="color:var(--suave)">${esc(p.em_uso || '')}</small></div>
+      ${r.obs ? `<div class="nota"><b>${esc(r.status_man || '')}</b> ${esc(r.obs)}${r.data_atendimento ? ', previsão ' + fmt(r.data_atendimento) : ''}</div>` : ''}
+      <div class="acoes"><button class="btn ${p.status === 'Pendente' ? '' : 'sec'}" onclick="modalRespManut('${P}')">${p.status === 'Pendente' ? 'Responder' : 'Atualizar resposta'}</button></div></article>`;
+  }).join('') : `<div class="vazio"><img src="eices-marca.png" alt="" onerror="this.classList.add('logo-falha')"><b>Nenhum pedido de manutenção aqui</b>Os pedidos das obras aparecem nesta lista.</div>`;
+  const cons = D.manutencoes.filter(m => norm(m.status) === 'EM CONSERTO');
+  $('man-conserto').innerHTML = `<h2>Em conserto agora</h2>` + (cons.length ? `<table class="tabela"><thead><tr><th>Código</th><th>Ferramenta</th><th>Parada há</th><th></th></tr></thead><tbody>${cons.map(m => `<tr><td class="cod">${esc(m.codigo)}</td><td>${esc(m.item)}<br><small style="color:var(--suave)">veio de ${esc(m.obra || '—')}</small></td><td>${m.entrada ? -dias(m.entrada) + ' dias' : '—'}</td><td><button class="btn sec" style="min-height:36px;padding:6px 10px;font-size:.82rem" onclick="formRetorno('${esc(m.codigo)}')">Retorno</button></td></tr>`).join('')}</tbody></table>` : '<p class="sub">Nenhuma ferramenta em conserto.</p>');
+}
+function modalRespManut(proto) {
+  const p = pedidoPor(proto); if (!p) return; const r = p.resposta || {};
+  const pat = p.patrimonio ? patPorCodigo(p.patrimonio) : null;
+  const podeConserto = pat && !['BAIXADO','FURTADO','MANUTENÇÃO'].includes(pat.status);
+  abrirModal(`<h2>Responder manutenção</h2><p class="sub">${esc(p.obra)}: ${esc(p.ferramenta || p.equipamento)}${p.patrimonio ? ', ' + esc(p.patrimonio) : ''}. ${esc(p.descricao)}</p>
+    <div class="lado"><div class="campo"><label for="m-st">Situação <span class="obr">*</span></label><select id="m-st">${['Em análise','Programado','Em execução','Concluído','Não será feito'].map(s => `<option ${s === r.status_man ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
+      <div class="campo"><label for="m-data">Previsão de atendimento</label><input type="date" id="m-data" value="${esc(r.data_atendimento || '')}"></div></div>
+    <div class="campo"><label for="m-obs">Resposta para a obra <span class="obr">*</span></label><textarea id="m-obs">${esc(r.obs || '')}</textarea></div>
+    ${podeConserto ? `<label class="check"><input type="checkbox" id="m-cons"> Registrar ${esc(pat.codigo)} em conserto na planilha agora</label>` : p.patrimonio && !pat ? `<div class="dica" style="margin-bottom:12px">O código ${esc(p.patrimonio)} não foi encontrado no Patrimônio.</div>` : ''}
+    ${botoesModal('Enviar resposta', `salvarRespManut('${esc(proto)}')`)}`);
+}
+async function salvarRespManut(proto) {
+  const p = pedidoPor(proto); const st = $('m-st').value, obs = $('m-obs').value.trim();
+  if (!obs) return invalido($('m-obs'), 'Escreva a resposta para a obra');
+  const status = st === 'Concluído' ? 'Concluído' : st === 'Não será feito' ? 'Recusado' : 'Em andamento';
+  const resposta = Object.assign({}, p.resposta || {}, {status_man: st, data_atendimento: $('m-data').value, obs, data_resposta: new Date().toISOString()});
+  const cons = $('m-cons') && $('m-cons').checked;
+  const ok = await salvar('Salvando resposta…', async () => {
+    if (cons) await api({acao:'manutencao_enviar', codigo: p.patrimonio, obra: p.obra, data: hojeISO(), obs: p.descricao});
+    await atualizarPedido(p, {status, resposta});
+  });
+  if (ok) { fecharModal(); aviso('Resposta enviada para a obra'); if (cons) await carregarTudo(true); renderTudo(); }
+}
+
+// ══ INÍCIO DO APP ══════════════════════════════════════════════
+// atualiza só quando o app volta a ficar visível e não há janela aberta
+function podeAtualizar() {
+  if (!senha || !$('modal').classList.contains('escondido')) return false;
+  const a = document.activeElement;
+  return !(a && ['INPUT','TEXTAREA','SELECT'].includes(a.tagName));
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && podeAtualizar()) carregarTudo(true); });
+window.addEventListener('focus', () => { if (podeAtualizar()) carregarTudo(true); });
+
+(function iniciar() {
+  senha = localStorage.getItem('eices_ctrl_sessao') || sessionStorage.getItem('eices_ctrl_sessao') || '';
+  if (senha) abrirApp(); else $('tela-login').classList.remove('escondido');
+  setTimeout(() => { const a = $('abertura'); a.classList.add('sair'); setTimeout(() => a.remove(), 500); }, 900);
+})();
+</script>
+</body>
+</html>

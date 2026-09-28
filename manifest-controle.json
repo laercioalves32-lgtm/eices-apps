@@ -16,7 +16,7 @@
    "purpose": "any maskable"
   }
  ],
- "name": "EICES Controle de Ferramentas",
+ "name": "EICES Controle",
  "short_name": "EICES Controle",
- "start_url": "controle.html"
+ "start_url": "eices-controle.html"
 }

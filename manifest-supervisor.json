@@ -16,7 +16,7 @@
    "purpose": "any maskable"
   }
  ],
- "name": "EICES Pedidos da Obra",
- "short_name": "EICES Obras",
- "start_url": "obra.html"
+ "name": "EICES Ferramentas",
+ "short_name": "EICES Ferramentas",
+ "start_url": "eices-ferramentas.html"
 }
